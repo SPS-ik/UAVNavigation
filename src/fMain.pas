@@ -6,17 +6,16 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, ColorGrd, ShpAPI129, Math, StdCtrls, Spin, CheckLst,
   uDrawingClasses, DB, ADODB, Grids, DBGrids, DBCtrls, Mask, ComCtrls, GridsEh,
-  DBGridEh, ActnList, DBCtrlsEh, ToolWin, Menus;
+  DBGridEh, ActnList, DBCtrlsEh, ToolWin, Menus, ImgList;
 
 type
+  TMapMouseMode = (tmmmZoom = 0, tmmmDrag);
   TfrmMain = class(TForm)
     imgMap: TImage;
     pnlMap: TPanel;
     pnlObjects: TPanel;
     Splitter1: TSplitter;
-    GroupBox2: TGroupBox;
     GroupBox1: TGroupBox;
-    pnlMapImage: TPanel;
     tmrRefresh: TTimer;
     conNavigationDB: TADOConnection;
     DataSource1: TDataSource;
@@ -59,21 +58,30 @@ type
     acMapRefreshFull: TAction;
     edTime: TDBDateTimeEditEh;
     ToolBar1: TToolBar;
-    ToolButton1: TToolButton;
+    btnEditLayers: TToolButton;
     ToolButton2: TToolButton;
-    cbScale: TComboBox;
     ToolButton3: TToolButton;
     cbRefreshTime: TComboBox;
-    ToolButton5: TToolButton;
-    ToolButton6: TToolButton;
-    ToolButton7: TToolButton;
+    btnRefresh: TToolButton;
+    btnZoomMode: TToolButton;
     CoolBar1: TCoolBar;
     TrackQuery: TADOQuery;
     DataSource2: TDataSource;
     dtpDateFrom: TDateTimePicker;
     dtpDateTo: TDateTimePicker;
+    acEditLayers: TAction;
+    btnDragMode: TToolButton;
+    ImageList1: TImageList;
+    trbScale: TTrackBar;
+    acChangeScale: TAction;
+    acChangeMapMouseMode: TAction;
+    btnZoomOut: TToolButton;
+    btnZoomIn: TToolButton;
+    ToolButton5: TToolButton;
+    btnZoomAll: TToolButton;
+    acZoomIn: TAction;
+    acZoomOut: TAction;
     procedure FormCreate(Sender: TObject);
-    procedure Scale1Change(Sender: TObject);
     procedure chlbLayersClickCheck(Sender: TObject);
     procedure cbRefreshTimeChange(Sender: TObject);
     procedure colbNavObjrColorChange(Sender: TObject);
@@ -89,15 +97,20 @@ type
     procedure tblNavObjectsColorChange(Sender: TField);
     procedure acMapRefreshFullExecute(Sender: TObject);
     procedure tblNavObjectsNameChange(Sender: TField);
-    procedure Button1Click(Sender: TObject);
     procedure imgMapMouseEnter(Sender: TObject);
     procedure dtpDateFromChange(Sender: TObject);
     procedure dtpDateToChange(Sender: TObject);
     procedure CheckBox1Click(Sender: TObject);
     procedure imgMapMouseLeave(Sender: TObject);
+    procedure acEditLayersExecute(Sender: TObject);
+    procedure acChangeScaleExecute(Sender: TObject);
+    procedure acChangeMapMouseModeExecute(Sender: TObject);
+    procedure acZoomInExecute(Sender: TObject);
+    procedure acZoomOutExecute(Sender: TObject);
   private
     { Private declarations }
     FocusedComp: TControl;
+    FMapMouseMode: TMapMouseMode;
     procedure RefreshNavObjects;
   public
     { Public declarations }
@@ -175,8 +188,9 @@ procedure TfrmMain.FormCreate(Sender: TObject);
 begin
   dtpDateFrom.Date := now;  
   dtpDateTo.Date := now;
-  LayerLoader := TShapeMap.create(imgMap, strtofloat(cbScale.text));       
+  LayerLoader := TShapeMap.create(imgMap, trbScale.Position);
   tmrRefresh.Interval := strtoint(cbRefreshTime.Text + '000');
+  acChangeMapMouseMode.Execute;
   acMapRefreshFull.Execute;
 end;
 
@@ -191,13 +205,13 @@ begin
   end;
 end;
 
-procedure TfrmMain.imgMapDblClick(Sender: TObject);  
+procedure TfrmMain.imgMapDblClick(Sender: TObject);
 var
   P: TPoint;
 begin
   GetCursorPos(P);
-  LayerLoader.MoveMapImg(ScreenToClient(P).X - pnlMapImage.Left,
-    imgMap.Height - (ScreenToClient(P).Y - pnlMapImage.top));
+  LayerLoader.MoveMapImg(ScreenToClient(P).X - pnlMap.Left,
+    imgMap.Height - (ScreenToClient(P).Y - pnlMap.top));
  //zoom after doubleclick
  { if cbScale.ItemIndex <> pred(cbScale.Items.Count) then
     cbScale.ItemIndex := cbScale.ItemIndex + 1; }
@@ -207,20 +221,29 @@ end;
 procedure TfrmMain.imgMapMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
- StartX:=X;
- StartY:=Y;
- Screen.Cursor := crSizeAll;
+  if FMapMouseMode = tmmmDrag then
+  begin
+    StartX:=X;
+    StartY:=Y;
+    Screen.Cursor := crSizeAll;
+  end;
 end;
 
 procedure TfrmMain.imgMapMouseEnter(Sender: TObject);
 begin
-  FocusedComp := ActiveControl;
-  cbScale.SetFocus;
+  if FMapMouseMode = tmmmZoom then
+  begin
+    FocusedComp := ActiveControl;
+    trbScale.SetFocus;
+  end;
 end;
 
 procedure TfrmMain.imgMapMouseLeave(Sender: TObject);
 begin
-  (FocusedComp as TWinControl).SetFocus;
+  if FMapMouseMode = tmmmZoom then
+  begin
+    (FocusedComp as TWinControl).SetFocus;
+  end;
 end;
 
 procedure TfrmMain.imgMapMouseUp(Sender: TObject; Button: TMouseButton;
@@ -228,10 +251,23 @@ procedure TfrmMain.imgMapMouseUp(Sender: TObject; Button: TMouseButton;
 var
   NewC_x, NewC_y: Integer;
 begin
-  NewC_x := imgMap.Width div 2 + (StartX - X);
-  NewC_y := imgMap.Height div 2 - (StartY - Y);
-  LayerLoader.MoveMapImg(NewC_x, NewC_y);
-  Screen.Cursor := crDefault;
+  if FMapMouseMode = tmmmDrag then
+  begin
+    NewC_x := imgMap.Width div 2 + (StartX - X);
+    NewC_y := imgMap.Height div 2 - (StartY - Y);
+    LayerLoader.MoveMapImg(NewC_x, NewC_y);
+    Screen.Cursor := crDefault;
+  end
+  else
+  if FMapMouseMode = tmmmZoom then
+  begin
+    case Button of
+    mbLeft:
+      acZoomIn.Execute;
+    mbRight:
+      acZoomOut.Execute;
+    end; 
+  end;
 end;
 
 function TfrmMain.RandomColor: Tcolor;
@@ -319,12 +355,6 @@ begin
 end;
 
 
-procedure TfrmMain.Scale1Change(Sender: TObject);
-begin
-  LayerLoader.Scale := strtofloat(cbScale.text);
-  LayerLoader.ReDraw();
-end;
-
 procedure TfrmMain.tblNavObjectsAfterScroll(DataSet: TDataSet);
 var
   Index: Integer;
@@ -363,17 +393,50 @@ begin
   LayerLoader.NavObjects[Index].Name := tblNavObjectsName.Value;
 end;
 
+procedure TfrmMain.acChangeMapMouseModeExecute(Sender: TObject);
+begin
+  if btnZoomMode.Down then
+    FMapMouseMode := tmmmZoom
+  else
+    if btnDragMode.Down then
+    begin
+      FMapMouseMode := tmmmDrag;
+      windows.SetFocus(0);
+    end;
+end;
+
+procedure TfrmMain.acChangeScaleExecute(Sender: TObject);
+begin
+  acZoomOut.Enabled := trbScale.Position <> trbScale.Min;
+  acZoomIn.Enabled := trbScale.Position <> trbScale.Max;
+
+  LayerLoader.Scale := trbScale.Position;
+  LayerLoader.ReDraw();
+end;
+
+procedure TfrmMain.acEditLayersExecute(Sender: TObject);
+begin
+  frmLayers.ShowModal;
+end;
+
 procedure TfrmMain.acMapRefreshFullExecute(Sender: TObject);
 begin    
   tmrRefresh.Enabled := False;
   RefreshNavObjects;
-  LayerLoader.ReDraw(cbFollowCurrNavObject.Checked); 
+  LayerLoader.ReDraw(cbFollowCurrNavObject.Checked);
   tmrRefresh.Enabled := True;
 end;
 
-procedure TfrmMain.Button1Click(Sender: TObject);
+procedure TfrmMain.acZoomInExecute(Sender: TObject);
 begin
-  frmLayers.ShowModal;
+  trbScale.Position := trbScale.Position + trbScale.Frequency;
+  acChangeScale.Execute;
+end;
+
+procedure TfrmMain.acZoomOutExecute(Sender: TObject);
+begin
+  trbScale.Position := trbScale.Position - trbScale.Frequency;
+  acChangeScale.Execute;
 end;
 
 end.
