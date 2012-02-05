@@ -279,7 +279,7 @@ begin
    Fimg.Picture.Bitmap.Height := Fimg.Height;
 
 	 Fimg.Canvas.Brush.Color := Layer.Color;
-	 Fimg.Canvas.Pen.Color := clBlack;
+	 Fimg.Canvas.Pen.Color := Layer.Color;
 
 	 for i := 0 to Layer.EntitiesCount - 1 do
    begin

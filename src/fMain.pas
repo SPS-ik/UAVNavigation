@@ -58,13 +58,6 @@ type
     ActionList1: TActionList;
     acMapRefreshFull: TAction;
     edTime: TDBDateTimeEditEh;
-    pmRefreshTimes: TPopupMenu;
-    N101: TMenuItem;
-    N151: TMenuItem;
-    N301: TMenuItem;
-    N601: TMenuItem;
-    N6001: TMenuItem;
-    N6002: TMenuItem;
     ToolBar1: TToolBar;
     ToolButton1: TToolButton;
     ToolButton2: TToolButton;

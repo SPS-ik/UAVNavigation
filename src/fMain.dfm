@@ -532,28 +532,6 @@ object frmMain: TfrmMain
       OnExecute = acMapRefreshFullExecute
     end
   end
-  object pmRefreshTimes: TPopupMenu
-    Left = 584
-    Top = 16
-    object N101: TMenuItem
-      Caption = '5'
-    end
-    object N151: TMenuItem
-      Caption = '15'
-    end
-    object N301: TMenuItem
-      Caption = '30'
-    end
-    object N601: TMenuItem
-      Caption = '60'
-    end
-    object N6001: TMenuItem
-      Caption = '300'
-    end
-    object N6002: TMenuItem
-      Caption = '600'
-    end
-  end
   object TrackQuery: TADOQuery
     Connection = conNavigationDB
     Parameters = <>
