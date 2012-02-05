@@ -296,6 +296,7 @@ begin
 		    SHPT_MULTIPOINT: draw_multipoint(obj, Fimg);
       end;
     end;
+    SHPDestroyObject(obj);
    end;
 end;
 
