@@ -1,0 +1,7 @@
+src/__history
+src/*.res
+src/*.*dproj*
+src/*.*cache*
+lib
+*/*.exe
+exe/maps
