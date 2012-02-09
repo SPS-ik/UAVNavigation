@@ -64,7 +64,6 @@ type
     cbRefreshTime: TComboBox;
     btnRefresh: TToolButton;
     btnZoomMode: TToolButton;
-    CoolBar1: TCoolBar;
     TrackQuery: TADOQuery;
     DataSource2: TDataSource;
     dtpDateFrom: TDateTimePicker;
@@ -81,6 +80,15 @@ type
     btnZoomAll: TToolButton;
     acZoomIn: TAction;
     acZoomOut: TAction;
+    MainMenu1: TMainMenu;
+    N1: TMenuItem;
+    N2: TMenuItem;
+    N3: TMenuItem;
+    N4: TMenuItem;
+    N6: TMenuItem;
+    N9: TMenuItem;
+    N10: TMenuItem;
+    N7: TMenuItem;
     procedure FormCreate(Sender: TObject);
     procedure chlbLayersClickCheck(Sender: TObject);
     procedure cbRefreshTimeChange(Sender: TObject);

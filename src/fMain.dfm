@@ -10,6 +10,7 @@ object frmMain: TfrmMain
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
+  Menu = MainMenu1
   OldCreateOrder = False
   Position = poScreenCenter
   OnCreate = FormCreate
@@ -32,8 +33,6 @@ object frmMain: TfrmMain
     Height = 593
     Align = alClient
     TabOrder = 0
-    ExplicitTop = 34
-    ExplicitHeight = 584
     object imgMap: TImage
       Left = 1
       Top = 1
@@ -55,8 +54,6 @@ object frmMain: TfrmMain
     Height = 593
     Align = alRight
     TabOrder = 1
-    ExplicitTop = 0
-    ExplicitHeight = 618
     object GroupBox1: TGroupBox
       Left = 1
       Top = 1
@@ -65,7 +62,6 @@ object frmMain: TfrmMain
       Align = alClient
       Caption = #1054#1073#1098#1077#1082#1090#1099
       TabOrder = 0
-      ExplicitHeight = 616
       object Splitter4: TSplitter
         Left = 2
         Top = 185
@@ -154,7 +150,6 @@ object frmMain: TfrmMain
         Align = alClient
         BevelOuter = bvNone
         TabOrder = 1
-        ExplicitHeight = 426
         DesignSize = (
           198
           401)
@@ -163,13 +158,11 @@ object frmMain: TfrmMain
           Top = 6
           Width = 194
           Height = 386
-          ActivePage = TabSheet1
+          ActivePage = TabSheet2
           Anchors = [akLeft, akTop, akRight, akBottom]
           TabOrder = 0
-          ExplicitHeight = 411
           object TabSheet1: TTabSheet
             Caption = #1048#1085#1092#1086#1088#1084#1072#1094#1080#1103
-            ExplicitHeight = 383
             object Label1: TLabel
               Left = 8
               Top = 78
@@ -294,9 +287,8 @@ object frmMain: TfrmMain
             end
           end
           object TabSheet2: TTabSheet
-            Caption = #1048#1089#1090#1086#1088#1080#1103
+            Caption = #1058#1088#1072#1077#1082#1090#1086#1088#1080#1103
             ImageIndex = 1
-            ExplicitHeight = 383
             object Label8: TLabel
               Left = 10
               Top = 15
@@ -345,129 +337,112 @@ object frmMain: TfrmMain
       end
     end
   end
-  object CoolBar1: TCoolBar
+  object ToolBar1: TToolBar
     Left = 0
     Top = 0
     Width = 900
     Height = 25
-    Bands = <
-      item
-        Control = ToolBar1
-        ImageIndex = -1
-        Width = 898
-      end>
-    Color = clWhite
-    EdgeBorders = [ebTop]
-    ParentColor = False
-    object ToolBar1: TToolBar
-      Left = 11
+    Customizable = True
+    Images = ImageList1
+    TabOrder = 2
+    ExplicitLeft = 11
+    ExplicitWidth = 889
+    object btnEditLayers: TToolButton
+      Left = 0
       Top = 0
-      Width = 889
-      Height = 25
-      Customizable = True
-      Images = ImageList1
+      Action = acEditLayers
+    end
+    object ToolButton2: TToolButton
+      Left = 23
+      Top = 0
+      Width = 8
+      Caption = 'ToolButton2'
+      ImageIndex = 1
+      Style = tbsSeparator
+    end
+    object btnDragMode: TToolButton
+      Left = 31
+      Top = 0
+      Action = acChangeMapMouseMode
+      Grouped = True
+      ImageIndex = 4
+      Style = tbsCheck
+    end
+    object btnZoomMode: TToolButton
+      Left = 54
+      Top = 0
+      Action = acChangeMapMouseMode
+      Down = True
+      Grouped = True
+      ImageIndex = 0
+      Style = tbsCheck
+    end
+    object ToolButton5: TToolButton
+      Left = 77
+      Top = 0
+      Width = 8
+      Caption = 'ToolButton5'
+      ImageIndex = 6
+      Style = tbsSeparator
+    end
+    object btnZoomAll: TToolButton
+      Left = 85
+      Top = 0
+      Caption = 'btnZoomAll'
+      ImageIndex = 6
+    end
+    object btnZoomOut: TToolButton
+      Left = 108
+      Top = 0
+      Action = acZoomOut
+    end
+    object btnZoomIn: TToolButton
+      Left = 131
+      Top = 0
+      Action = acZoomIn
+    end
+    object trbScale: TTrackBar
+      Left = 154
+      Top = 0
+      Width = 92
+      Height = 22
+      Max = 50
+      Min = 1
+      Frequency = 5
+      Position = 25
+      ShowSelRange = False
+      TabOrder = 1
+      OnChange = acChangeScaleExecute
+    end
+    object ToolButton3: TToolButton
+      Left = 246
+      Top = 0
+      Width = 8
+      Caption = 'ToolButton3'
+      ImageIndex = 2
+      Style = tbsSeparator
+    end
+    object btnRefresh: TToolButton
+      Left = 254
+      Top = 0
+      Action = acMapRefreshFull
+    end
+    object cbRefreshTime: TComboBox
+      Left = 277
+      Top = 0
+      Width = 45
+      Height = 21
+      ItemHeight = 13
+      ItemIndex = 3
       TabOrder = 0
-      object btnEditLayers: TToolButton
-        Left = 0
-        Top = 0
-        Action = acEditLayers
-        ImageIndex = 3
-      end
-      object ToolButton2: TToolButton
-        Left = 23
-        Top = 0
-        Width = 8
-        Caption = 'ToolButton2'
-        ImageIndex = 1
-        Style = tbsSeparator
-      end
-      object btnDragMode: TToolButton
-        Left = 31
-        Top = 0
-        Action = acChangeMapMouseMode
-        Grouped = True
-        ImageIndex = 4
-        Style = tbsCheck
-      end
-      object btnZoomMode: TToolButton
-        Left = 54
-        Top = 0
-        Action = acChangeMapMouseMode
-        Down = True
-        Grouped = True
-        ImageIndex = 0
-        Style = tbsCheck
-      end
-      object ToolButton5: TToolButton
-        Left = 77
-        Top = 0
-        Width = 8
-        Caption = 'ToolButton5'
-        ImageIndex = 6
-        Style = tbsSeparator
-      end
-      object btnZoomAll: TToolButton
-        Left = 85
-        Top = 0
-        Caption = 'btnZoomAll'
-        ImageIndex = 6
-      end
-      object btnZoomOut: TToolButton
-        Left = 108
-        Top = 0
-        Action = acZoomOut
-        ImageIndex = 2
-      end
-      object btnZoomIn: TToolButton
-        Left = 131
-        Top = 0
-        Action = acZoomIn
-        ImageIndex = 1
-      end
-      object trbScale: TTrackBar
-        Left = 154
-        Top = 0
-        Width = 92
-        Height = 22
-        Max = 50
-        Min = 1
-        Frequency = 5
-        Position = 25
-        ShowSelRange = False
-        TabOrder = 1
-        OnChange = acChangeScaleExecute
-      end
-      object ToolButton3: TToolButton
-        Left = 246
-        Top = 0
-        Width = 8
-        Caption = 'ToolButton3'
-        ImageIndex = 2
-        Style = tbsSeparator
-      end
-      object btnRefresh: TToolButton
-        Left = 254
-        Top = 0
-        Action = acMapRefreshFull
-        ImageIndex = 5
-      end
-      object cbRefreshTime: TComboBox
-        Left = 277
-        Top = 0
-        Width = 45
-        Height = 21
-        ItemHeight = 13
-        ItemIndex = 3
-        TabOrder = 0
-        Text = '60'
-        OnChange = cbRefreshTimeChange
-        Items.Strings = (
-          '5'
-          '15'
-          '30'
-          '60'
-          '360')
-      end
+      Text = '60'
+      OnChange = cbRefreshTimeChange
+      Items.Strings = (
+        '5'
+        '15'
+        '30'
+        '60'
+        '360')
     end
   end
   object tmrRefresh: TTimer
@@ -535,14 +510,17 @@ object frmMain: TfrmMain
     end
   end
   object ActionList1: TActionList
+    Images = ImageList1
     Left = 640
     Top = 40
     object acMapRefreshFull: TAction
       Caption = #1054#1073#1085#1086#1074#1080#1090#1100
+      ImageIndex = 5
       OnExecute = acMapRefreshFullExecute
     end
     object acEditLayers: TAction
-      Caption = #1057#1083#1086#1080
+      Caption = #1056#1077#1076#1072#1082#1090#1086#1088' '#1089#1083#1086#1077#1074
+      ImageIndex = 3
       OnExecute = acEditLayersExecute
     end
     object acChangeScale: TAction
@@ -553,11 +531,13 @@ object frmMain: TfrmMain
       OnExecute = acChangeMapMouseModeExecute
     end
     object acZoomIn: TAction
-      Caption = 'acZoomIn'
+      Caption = #1055#1088#1080#1073#1083#1080#1079#1080#1090#1100
+      ImageIndex = 1
       OnExecute = acZoomInExecute
     end
     object acZoomOut: TAction
-      Caption = 'acZoomOut'
+      Caption = #1054#1090#1076#1072#1083#1080#1090#1100
+      ImageIndex = 2
       OnExecute = acZoomOutExecute
     end
   end
@@ -576,7 +556,7 @@ object frmMain: TfrmMain
     Left = 576
     Top = 40
     Bitmap = {
-      494C010107003800300010001000FFFFFFFFFF00FFFFFFFFFFFFFFFF424D3600
+      494C010107003800340010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -844,6 +824,36 @@ object frmMain: TfrmMain
       07FF87FF87FF0000C7FF83FF83FF0000C3FFC1FFC1FF8001E00FE003E0030000
       F007F801F8010000F003F800F8000000F003F800F8008001E001F800F8000000
       E001F800F8000000E003F800F8000000F003F800F8008001F003F800F800C003
-      F807FC01FC01E007FC1FFE03FE03F00F}
+      F807FC01FC01E007FC1FFE03FE03F00F00000000000000000000000000000000
+      000000000000}
+  end
+  object MainMenu1: TMainMenu
+    Images = ImageList1
+    Left = 536
+    Top = 40
+    object N1: TMenuItem
+      Caption = #1057#1083#1086#1081
+      object N6: TMenuItem
+        Action = acEditLayers
+      end
+    end
+    object N2: TMenuItem
+      Caption = #1042#1080#1076
+      object N9: TMenuItem
+        Action = acZoomIn
+      end
+      object N10: TMenuItem
+        Action = acZoomOut
+      end
+      object N7: TMenuItem
+        Action = acMapRefreshFull
+      end
+    end
+    object N3: TMenuItem
+      Caption = #1053#1072#1089#1090#1088#1086#1081#1082#1080
+    end
+    object N4: TMenuItem
+      Caption = #1055#1086#1084#1086#1097#1100
+    end
   end
 end
