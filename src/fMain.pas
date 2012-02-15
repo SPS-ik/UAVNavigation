@@ -6,16 +6,17 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, ExtCtrls, ColorGrd, ShpAPI129, Math, StdCtrls, Spin, CheckLst,
   uDrawingClasses, DB, ADODB, Grids, DBGrids, DBCtrls, Mask, ComCtrls, GridsEh,
-  DBGridEh, ActnList, DBCtrlsEh, ToolWin, Menus, ImgList;
+  DBGridEh, ActnList, DBCtrlsEh, ToolWin, Menus, ImgList, Buttons;
 
 type
-  TMapMouseMode = (tmmmZoom = 0, tmmmDrag);
+  TMapMouseMode = (tmmmDefault = 0, tmmmZoom, tmmmDrag);
+  TPointType = (tptNone = 0, tptStart, tptStop, tptMid);
   TfrmMain = class(TForm)
     imgMap: TImage;
     pnlMap: TPanel;
     pnlObjects: TPanel;
     Splitter1: TSplitter;
-    GroupBox1: TGroupBox;
+    grbNavOdjects: TGroupBox;
     tmrRefresh: TTimer;
     conNavigationDB: TADOConnection;
     DataSource1: TDataSource;
@@ -38,7 +39,7 @@ type
     Label7: TLabel;
     Label8: TLabel;
     Label9: TLabel;
-    CheckBox1: TCheckBox;
+    chbRealTrack: TCheckBox;
     pnlObjList: TPanel;
     pnlObjDetails: TPanel;
     Splitter4: TSplitter;
@@ -89,6 +90,24 @@ type
     N9: TMenuItem;
     N10: TMenuItem;
     N7: TMenuItem;
+    grbRealTrack: TGroupBox;
+    grbDesiredTrack: TGroupBox;
+    chbDesiredTrack: TCheckBox;
+    edDesiredStartLong: TEdit;
+    edDesiredStartLatt: TEdit;
+    btnAddDesiredStart: TButton;
+    grbDesiredStart: TGroupBox;
+    Label10: TLabel;
+    Label11: TLabel;
+    Button3: TButton;
+    grbDesiredStop: TGroupBox;
+    Label12: TLabel;
+    Label13: TLabel;
+    btnAddDesiredStop: TButton;
+    edDesiredStopLong: TEdit;
+    edDesiredStopLatt: TEdit;
+    btnDefaultMode: TToolButton;
+    sbMap: TStatusBar;
     procedure FormCreate(Sender: TObject);
     procedure chlbLayersClickCheck(Sender: TObject);
     procedure cbRefreshTimeChange(Sender: TObject);
@@ -108,17 +127,20 @@ type
     procedure imgMapMouseEnter(Sender: TObject);
     procedure dtpDateFromChange(Sender: TObject);
     procedure dtpDateToChange(Sender: TObject);
-    procedure CheckBox1Click(Sender: TObject);
     procedure imgMapMouseLeave(Sender: TObject);
     procedure acEditLayersExecute(Sender: TObject);
     procedure acChangeScaleExecute(Sender: TObject);
     procedure acChangeMapMouseModeExecute(Sender: TObject);
     procedure acZoomInExecute(Sender: TObject);
     procedure acZoomOutExecute(Sender: TObject);
+    procedure chbRealTrackClick(Sender: TObject);
+    procedure chbDesiredTrackClick(Sender: TObject);
+    procedure btnAddDesiredPointClick(Sender: TObject);
   private
     { Private declarations }
     FocusedComp: TControl;
     FMapMouseMode: TMapMouseMode;
+    FDesiredTrackPoint: TPointType;
     procedure RefreshNavObjects;
   public
     { Public declarations }
@@ -142,9 +164,15 @@ begin
     tmrRefresh.Interval := strtoint(cbRefreshTime.Text + '000');
 end;
 
-procedure TfrmMain.CheckBox1Click(Sender: TObject);
+procedure TfrmMain.chbDesiredTrackClick(Sender: TObject);
 begin
-  LayerLoader.AllowdDrawTrack := (Sender as TCheckBox).Checked;
+  LayerLoader.AllowDrawDesiredTrack := (Sender as TCheckBox).Checked;
+  acMapRefreshFull.Execute;
+end;
+
+procedure TfrmMain.chbRealTrackClick(Sender: TObject);
+begin
+  LayerLoader.AllowDrawTrack := (Sender as TCheckBox).Checked;
   acMapRefreshFull.Execute;
 end;
 
@@ -217,6 +245,8 @@ procedure TfrmMain.imgMapDblClick(Sender: TObject);
 var
   P: TPoint;
 begin
+  if FMapMouseMode = tmmmDrag then
+  begin
   GetCursorPos(P);
   LayerLoader.MoveMapImg(ScreenToClient(P).X - pnlMap.Left,
     imgMap.Height - (ScreenToClient(P).Y - pnlMap.top));
@@ -224,33 +254,66 @@ begin
  { if cbScale.ItemIndex <> pred(cbScale.Items.Count) then
     cbScale.ItemIndex := cbScale.ItemIndex + 1; }
   LayerLoader.ReDraw();
+  end;
 end;
 
 procedure TfrmMain.imgMapMouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
+var
+  RealX, RealY: Double;
 begin
+  RealX := LayerLoader.X_c + (X - (imgMap.Width div 2))/LayerLoader.Scale;
+  RealY := LayerLoader.Y_c + (-Y + (imgMap.Height div 2))/LayerLoader.Scale;
+
   if FMapMouseMode = tmmmDrag then
   begin
-    StartX:=X;
-    StartY:=Y;
-    Screen.Cursor := crSizeAll;
+      StartX:=X;
+      StartY:=Y;
+      Screen.Cursor := crSizeAll;
   end;
+  
+  if FMapMouseMode = tmmmDefault then
+  begin
+    case FDesiredTrackPoint of
+    tptStart:
+      begin
+        edDesiredStartLong.Text := FloatToStr(RealX);
+        edDesiredStartLatt.Text := FloatToStr(RealY);
+      end;
+    tptStop:
+      begin
+        edDesiredStopLong.Text := FloatToStr(RealX);
+        edDesiredStopLatt.Text := FloatToStr(RealY);
+      end;
+    end;
+    sbMap.Panels[0].Text := FloatToStr(RealX) + '; ' + FloatToStr(RealY);
+  end
+  else
+    sbMap.Panels[0].Text := '';
+
+
+
 end;
 
 procedure TfrmMain.imgMapMouseEnter(Sender: TObject);
 begin
-  if FMapMouseMode = tmmmZoom then
-  begin
-    FocusedComp := ActiveControl;
-    trbScale.SetFocus;
+  case FMapMouseMode of
+  tmmmZoom:
+    begin
+      FocusedComp := ActiveControl;
+      trbScale.SetFocus;
+    end;
   end;
 end;
 
 procedure TfrmMain.imgMapMouseLeave(Sender: TObject);
 begin
-  if FMapMouseMode = tmmmZoom then
-  begin
-    (FocusedComp as TWinControl).SetFocus;
+  case FMapMouseMode of
+  tmmmZoom:
+    begin
+      if Assigned(FocusedComp) then      
+        (FocusedComp as TWinControl).SetFocus;
+    end;
   end;
 end;
 
@@ -259,22 +322,23 @@ procedure TfrmMain.imgMapMouseUp(Sender: TObject; Button: TMouseButton;
 var
   NewC_x, NewC_y: Integer;
 begin
-  if FMapMouseMode = tmmmDrag then
-  begin
-    NewC_x := imgMap.Width div 2 + (StartX - X);
-    NewC_y := imgMap.Height div 2 - (StartY - Y);
-    LayerLoader.MoveMapImg(NewC_x, NewC_y);
-    Screen.Cursor := crDefault;
-  end
-  else
-  if FMapMouseMode = tmmmZoom then
-  begin
-    case Button of
-    mbLeft:
-      acZoomIn.Execute;
-    mbRight:
-      acZoomOut.Execute;
-    end; 
+  case FMapMouseMode of
+  tmmmZoom:
+    begin
+      case Button of
+      mbLeft:
+        acZoomIn.Execute;
+      mbRight:
+        acZoomOut.Execute;
+      end;
+    end;
+  tmmmDrag:
+    begin
+      NewC_x := imgMap.Width div 2 + (StartX - X);
+      NewC_y := imgMap.Height div 2 - (StartY - Y);
+      LayerLoader.MoveMapImg(NewC_x, NewC_y);
+      Screen.Cursor := crDefault;
+    end;
   end;
 end;
 
@@ -296,33 +360,57 @@ procedure TfrmMain.RefreshNavObjects;
     sql: string;
     Point: TMyPoint;
   begin
-  if LayerLoader.AllowdDrawTrack then
-  begin
-    sql := format('Select X, Y from Obj_history where Obj_ID = %d and Time between convert(datetime, ''%s'', 104) and convert(datetime, ''%s'', 104)',
-      [tblNavObjectsID.Value,  DateTimeToStr(dtpDateFrom.DateTime), DateTimeToStr(dtpDateTo.DateTime)]);
+    if LayerLoader.AllowDrawTrack then
+    begin
+      sql := format('Select X, Y from Obj_history where Obj_ID = %d and Time between convert(datetime, ''%s'', 104) and convert(datetime, ''%s'', 104)',
+        [tblNavObjectsID.Value,  DateTimeToStr(dtpDateFrom.DateTime), DateTimeToStr(dtpDateTo.DateTime)]);
 
-    TrackQuery.SQL.Clear;
-    TrackQuery.SQL.Add(sql);
-    TrackQuery.Active := false;
-    TrackQuery.Active := True;
+      TrackQuery.SQL.Clear;
+      TrackQuery.SQL.Add(sql);
+      TrackQuery.Active := false;
+      TrackQuery.Active := True;
 
-    with TrackQuery do
-      begin
-        DisableControls;
-        try
-          First;
-          while not Eof do
-          begin
-            Point.X := FindField('X').Value;
-            Point.Y := FindField('Y').Value;
-            NavObject.addTrackPoint(Point);
-            next;
+      with TrackQuery do
+        begin
+          DisableControls;
+          try
+            First;
+            while not Eof do
+            begin
+              Point.X := FindField('X').Value;
+              Point.Y := FindField('Y').Value;
+              NavObject.addTrackPoint(Point);
+              next;
+            end;
+          finally
+            EnableControls;
           end;
-        finally
-          EnableControls;
         end;
-      end;
+    end;
   end;
+
+  procedure RefreshDesiredTrack(NavObject: TNavObject);
+  var
+    Point: TMyPoint;
+  begin
+    if LayerLoader.AllowDrawDesiredTrack then
+    begin
+    try
+      Point.X := StrToFloat(edDesiredStartLong.Text);
+      Point.Y := StrToFloat(edDesiredStartLatt.Text);
+      NavObject.addDesiredTrackPoint(Point);
+
+      Point.X := StrToFloat(edDesiredStopLong.Text);
+      Point.Y := StrToFloat(edDesiredStopLatt.Text);
+      NavObject.addDesiredTrackPoint(Point);
+    except
+      on EConvertError do
+      begin
+        ShowMessage('Некорректно заданы точки желаемой траектории!');
+        Exit;
+      end;
+    end;
+    end;
   end;
 
 var
@@ -336,7 +424,7 @@ begin
   tblNavObjects.Close;
   tblNavObjects.Open;
 
-  LayerLoader.ClearNavObject;
+  LayerLoader.ClearNavObjects;
   with tblNavObjects do
   begin
     DisableControls;
@@ -347,8 +435,9 @@ begin
         NavObject := TNavObject.Create(tblNavObjectsID.value,
           tblNavObjectsName.value, tblNavObjectsX.value,
           tblNavObjectsY.value, StringToColor(tblNavObjectsColor.Value),
-          tblNavObjectsIs_Visible.Value);  
+          tblNavObjectsIs_Visible.Value);
         RefreshTrack(NavObject);
+        RefreshDesiredTrack(NavObject);
         LayerLoader.addNavObject(NavObject);
         Next;
       end;
@@ -361,7 +450,6 @@ begin
     end;
   end;
 end;
-
 
 procedure TfrmMain.tblNavObjectsAfterScroll(DataSet: TDataSet);
 var
@@ -406,11 +494,17 @@ begin
   if btnZoomMode.Down then
     FMapMouseMode := tmmmZoom
   else
-    if btnDragMode.Down then
-    begin
-      FMapMouseMode := tmmmDrag;
-      windows.SetFocus(0);
-    end;
+  if btnDragMode.Down then
+  begin
+    FMapMouseMode := tmmmDrag;
+    windows.SetFocus(0);
+  end
+  else
+  if btnDefaultMode.Down then
+  begin
+    FMapMouseMode := tmmmDefault;
+    windows.SetFocus(0);
+  end;
 end;
 
 procedure TfrmMain.acChangeScaleExecute(Sender: TObject);
@@ -418,7 +512,7 @@ begin
   acZoomOut.Enabled := trbScale.Position <> trbScale.Min;
   acZoomIn.Enabled := trbScale.Position <> trbScale.Max;
 
-  LayerLoader.Scale := trbScale.Position;
+  LayerLoader.Scale := trbScale.Position * 1000;
   LayerLoader.ReDraw();
 end;
 
@@ -445,6 +539,52 @@ procedure TfrmMain.acZoomOutExecute(Sender: TObject);
 begin
   trbScale.Position := trbScale.Position - trbScale.Frequency;
   acChangeScale.Execute;
+end;
+
+procedure TfrmMain.btnAddDesiredPointClick(Sender: TObject);
+var
+  Point: TMyPoint;
+begin
+  if FDesiredTrackPoint = tptNone then
+  begin
+    btnDefaultMode.Down := True;
+    FMapMouseMode := tmmmDefault;
+    if Sender = btnAddDesiredStart then
+    begin
+      (Sender as TButton).Caption := 'OK';
+      FDesiredTrackPoint := tptStart;
+      grbDesiredStop.Enabled := False;
+      edDesiredStartLong.Enabled := True;
+      edDesiredStartLatt.Enabled := True;
+    end;
+    if Sender = btnAddDesiredStop then
+    begin
+      (Sender as TButton).Caption := 'OK';
+      FDesiredTrackPoint := tptStop;
+      grbDesiredStart.Enabled := False;
+      edDesiredStopLong.Enabled := True;
+      edDesiredStopLatt.Enabled := True;
+    end;
+  end
+  else
+  begin      
+    FDesiredTrackPoint := tptNone;
+    if Sender = btnAddDesiredStart then
+    begin
+      (Sender as TButton).Caption := 'Изменить';
+      grbDesiredStop.Enabled := True;
+      edDesiredStartLong.Enabled := False;
+      edDesiredStartLatt.Enabled := False;
+    end;
+    if Sender = btnAddDesiredStop then
+    begin
+      (Sender as TButton).Caption := 'Изменить';
+      grbDesiredStart.Enabled := True;
+      edDesiredStopLong.Enabled := False;
+      edDesiredStopLatt.Enabled := False;
+    end;
+  end;
+
 end;
 
 end.
