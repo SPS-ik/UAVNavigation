@@ -59,7 +59,9 @@ Type
      FX: Double;   
      FY: Double;
      FTrackPoints: TMyPointsArr;
+     FTrackPointsCount: Integer;
      FDesiredTrackPoints: TMyPointsArr;
+     FDesiredTrackPointsCount: Integer;
 
      function getVisible(): Boolean;
      procedure setVisible(Vis: Boolean);
@@ -91,16 +93,20 @@ Type
      property DesiredTrackPoints[Index: Integer]: TMyPoint read getDesiredTrackPoint write setDesiredTrackPoint;
      property Visible: Boolean read getVisible write setVisible;
      property Color: TColor read getColor write setColor; 
+     property TrackPointsCount: Integer read FTrackPointsCount;
+     property DesiredTrackPointsCount: Integer read FDesiredTrackPointsCount;
 
      procedure addTrackPoint(TrackPoint: TMyPoint);
-     procedure addDesiredTrackPoint(TrackPoint: TMyPoint);
+     procedure addDesiredTrackPoint(TrackPoint: TMyPoint);   
+     procedure ClearTrack;
+     procedure ClearDesiredTrack;
 
   end;
 
   TShapeMap = class
     private
       FImg: TImage;
-      FLayerCount: Integer; 
+      FLayerCount: Integer;
       FNavObjectCount: Integer;
       FScale: double;
       FX_c, FY_c: double;
@@ -233,8 +239,6 @@ begin
   inc(FNavObjectCount);
 end;
 
-
-
 function TShapeMap.castCoor_X(x: double): Integer;
 begin
 	 result := (FImg.Width div 2) + floor((x - FX_c)*FScale);
@@ -247,26 +251,16 @@ end;
 
 procedure TShapeMap.ClearNavObjects;
 var
-  i,j: Integer;
+  i: Integer;
 begin
   for i := 0 to length(FNavObjects) - 1 do
   begin
-    for j  := 0 to length(FNavObjects[i].FTrackPoints) - 1 do
-      begin
-        FNavObjects[i].FTrackPoints[j].X := 0;
-        FNavObjects[i].FTrackPoints[j].Y := 0;
-      end;
-    SetLength(FNavObjects[i].FTrackPoints, 0);
-    for j  := 0 to length(FNavObjects[i].FDesiredTrackPoints) - 1 do
-      begin
-        FNavObjects[i].FDesiredTrackPoints[j].X := 0;
-        FNavObjects[i].FDesiredTrackPoints[j].Y := 0;
-      end;
-    SetLength(FNavObjects[i].FDesiredTrackPoints, 0);
+    FNavObjects[i].ClearTrack;  
+    FNavObjects[i].ClearDesiredTrack;
     FNavObjects[i].Free;
-  end;
-  SetLength(FNavObjects, 0);
+  end;                      
   FNavObjectCount := 0;
+  SetLength(FNavObjects, FNavObjectCount);
 end;
 
 constructor TShapeMap.create(var Img: TImage; Scale: double);
@@ -279,7 +273,6 @@ begin
   FX_c := 0;
   FY_c := 0;
 end;
-
 
 procedure TShapeMap.DrawLayer(Layer: TLayer);
 var
@@ -316,7 +309,7 @@ end;
 
 procedure TShapeMap.DrawNavObject(NavObject: TNavObject; IsCurrObj: Boolean = False);
 
-  procedure DrawTrack(ATrackPoints: TMyPointsArr);
+  procedure DrawTrack(ATrackPoints: TMyPointsArr; APointColor: TColor);
   var
     points: TPointsArr;
     i: Integer;
@@ -333,7 +326,7 @@ procedure TShapeMap.DrawNavObject(NavObject: TNavObject; IsCurrObj: Boolean = Fa
       Fimg.Canvas.Pen.Width := 5;
       Fimg.Canvas.MoveTo(points[i].X, points[i].Y);
       Fimg.Canvas.LineTo(points[i].X, points[i].Y);
-      Fimg.Canvas.Pen.Color := clRed;
+      Fimg.Canvas.Pen.Color := APointColor;
       Fimg.Canvas.Pen.Width := 2;
       Fimg.Canvas.Ellipse(points[i].X-10, points[i].Y-10, points[i].X+10, points[i].Y+10);
     end;
@@ -345,7 +338,8 @@ procedure TShapeMap.DrawNavObject(NavObject: TNavObject; IsCurrObj: Boolean = Fa
 var
   mode: TPenMode;
   wid: Integer;
-  col: TColor;
+  PnCol: TColor;
+  BrCol: TColor;
 begin
 	if  (not NavObject.Visible) then
     exit;
@@ -354,8 +348,9 @@ begin
   Fimg.Picture.Bitmap.Height := Fimg.Height;
 
   mode := Fimg.Canvas.Pen.Mode;
-  col := Fimg.Canvas.Pen.Color;
+  PnCol := Fimg.Canvas.Pen.Color;
   wid := Fimg.Canvas.Pen.Width;
+  BrCol := Fimg.Canvas.Brush.Color;
 
   Fimg.Canvas.Pen.Mode  := pmMask;
   Fimg.Canvas.Pen.Color := NavObject.Color;
@@ -373,14 +368,15 @@ begin
   if IsCurrObj then
   begin
     if FAllowDrawTrack then
-      DrawTrack(NavObject.FTrackPoints);   
+      DrawTrack(NavObject.FTrackPoints, clRed);
     if FAllowDrawDesiredTrack then
-      DrawTrack(NavObject.FDesiredTrackPoints);
+      DrawTrack(NavObject.FDesiredTrackPoints, clBlue);
   end;
 
   Fimg.Canvas.Pen.Mode := mode;
-  Fimg.Canvas.Pen.Color := col;
-  Fimg.Canvas.Pen.Width := wid;
+  Fimg.Canvas.Pen.Color := PnCol;
+  Fimg.Canvas.Pen.Width := wid;   
+  Fimg.Canvas.Brush.Color := BrCol;
 end;
 
 procedure TShapeMap.draw_arc(obj: PSHPObject; var img: TImage);
@@ -541,12 +537,40 @@ procedure TNavObject.addDesiredTrackPoint(TrackPoint: TMyPoint);
 begin
   SetLength(FDesiredTrackPoints, length(FDesiredTrackPoints) + 1);
   FDesiredTrackPoints[length(FDesiredTrackPoints) - 1] := TrackPoint;
+  inc(FDesiredTrackPointsCount);
 end;
 
 procedure TNavObject.addTrackPoint(TrackPoint: TMyPoint);
+begin      
+  inc(FTrackPointsCount);
+  SetLength(FTrackPoints, FTrackPointsCount);
+  FTrackPoints[FTrackPointsCount - 1] := TrackPoint;
+end;
+
+procedure TNavObject.ClearDesiredTrack;
+var
+  i: Integer;
 begin
-  SetLength(FTrackPoints, length(FTrackPoints) + 1);
-  FTrackPoints[length(FTrackPoints) - 1] := TrackPoint;
+  for i  := 0 to FDesiredTrackPointsCount - 1 do
+  begin
+    FDesiredTrackPoints[i].X := 0;
+    FDesiredTrackPoints[i].Y := 0;
+  end;
+  FDesiredTrackPointsCount := 0;
+  SetLength(FDesiredTrackPoints, FDesiredTrackPointsCount);
+end;
+
+procedure TNavObject.ClearTrack;
+var
+  i: Integer;
+begin
+  for i  := 0 to FTrackPointsCount - 1 do
+    begin
+      FTrackPoints[i].X := 0;
+      FTrackPoints[i].Y := 0;
+    end;
+  FTrackPointsCount := 0;
+  SetLength(FTrackPoints, FTrackPointsCount);
 end;
 
 constructor TNavObject.Create(ID: integer; name: string; X: Double; Y: Double;
@@ -556,6 +580,8 @@ begin
   Fname := Name;
   FX := X;
   FY := Y;
+  FTrackPointsCount := 0;
+  FDesiredTrackPointsCount := 0;
   FVisible := Visible;
   FColor := Color;
 end;

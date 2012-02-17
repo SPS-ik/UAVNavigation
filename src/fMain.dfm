@@ -2,8 +2,8 @@ object frmMain: TfrmMain
   Left = 0
   Top = 0
   Caption = 'Navigation'
-  ClientHeight = 628
-  ClientWidth = 900
+  ClientHeight = 667
+  ClientWidth = 897
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -17,9 +17,9 @@ object frmMain: TfrmMain
   PixelsPerInch = 96
   TextHeight = 13
   object Splitter1: TSplitter
-    Left = 693
+    Left = 690
     Top = 25
-    Height = 603
+    Height = 642
     Align = alRight
     ResizeStyle = rsUpdate
     ExplicitLeft = 0
@@ -29,27 +29,28 @@ object frmMain: TfrmMain
   object pnlMap: TPanel
     Left = 0
     Top = 25
-    Width = 693
-    Height = 603
+    Width = 690
+    Height = 642
     Align = alClient
     TabOrder = 0
     object imgMap: TImage
       Left = 1
       Top = 1
-      Width = 691
-      Height = 582
+      Width = 688
+      Height = 621
       Align = alClient
       OnDblClick = imgMapDblClick
       OnMouseDown = imgMapMouseDown
       OnMouseEnter = imgMapMouseEnter
       OnMouseLeave = imgMapMouseLeave
       OnMouseUp = imgMapMouseUp
+      ExplicitWidth = 691
       ExplicitHeight = 432
     end
     object sbMap: TStatusBar
       Left = 1
-      Top = 583
-      Width = 691
+      Top = 622
+      Width = 688
       Height = 19
       Panels = <
         item
@@ -58,17 +59,17 @@ object frmMain: TfrmMain
     end
   end
   object pnlObjects: TPanel
-    Left = 696
+    Left = 693
     Top = 25
     Width = 204
-    Height = 603
+    Height = 642
     Align = alRight
     TabOrder = 1
     object grbNavOdjects: TGroupBox
       Left = 1
       Top = 1
       Width = 202
-      Height = 601
+      Height = 640
       Align = alClient
       Caption = #1054#1073#1098#1077#1082#1090#1099
       TabOrder = 0
@@ -156,19 +157,19 @@ object frmMain: TfrmMain
         Left = 2
         Top = 188
         Width = 198
-        Height = 411
+        Height = 450
         Align = alClient
         BevelOuter = bvNone
         TabOrder = 1
         DesignSize = (
           198
-          411)
+          450)
         object PageControl1: TPageControl
           Left = 3
           Top = 6
           Width = 194
-          Height = 396
-          ActivePage = TabSheet2
+          Height = 435
+          ActivePage = TabSheet1
           Anchors = [akLeft, akTop, akRight, akBottom]
           TabOrder = 0
           object TabSheet1: TTabSheet
@@ -299,30 +300,33 @@ object frmMain: TfrmMain
           object TabSheet2: TTabSheet
             Caption = #1058#1088#1072#1077#1082#1090#1086#1088#1080#1103
             ImageIndex = 1
+            DesignSize = (
+              186
+              407)
             object grbRealTrack: TGroupBox
-              Left = 2
-              Top = 6
-              Width = 181
-              Height = 83
-              TabOrder = 0
+              Left = 0
+              Top = 4
+              Width = 186
+              Height = 70
+              TabOrder = 3
               object Label8: TLabel
-                Left = 12
-                Top = 24
+                Left = 10
+                Top = 19
                 Width = 11
                 Height = 13
                 Caption = #1057':'
               end
               object Label9: TLabel
-                Left = 6
-                Top = 54
+                Left = 4
+                Top = 46
                 Width = 17
                 Height = 13
                 Caption = #1055#1086':'
               end
               object dtpDateFrom: TDateTimePicker
-                Left = 29
-                Top = 20
-                Width = 149
+                Left = 27
+                Top = 15
+                Width = 150
                 Height = 21
                 Date = 40657.812675983800000000
                 Time = 40657.812675983800000000
@@ -330,9 +334,9 @@ object frmMain: TfrmMain
                 OnChange = dtpDateFromChange
               end
               object dtpDateTo: TDateTimePicker
-                Left = 29
-                Top = 50
-                Width = 149
+                Left = 27
+                Top = 42
+                Width = 150
                 Height = 21
                 Date = 40657.812720879630000000
                 Time = 40657.812720879630000000
@@ -340,132 +344,144 @@ object frmMain: TfrmMain
                 OnChange = dtpDateToChange
               end
             end
-            object chbRealTrack: TCheckBox
-              Left = 7
-              Top = 3
-              Width = 135
-              Height = 17
-              Caption = #1056#1077#1072#1083#1100#1085#1072#1103' '#1090#1088#1072#1077#1082#1090#1086#1088#1080#1103
-              TabOrder = 1
-              OnClick = chbRealTrackClick
-            end
             object grbDesiredTrack: TGroupBox
-              Left = 2
-              Top = 95
-              Width = 181
-              Height = 270
-              TabOrder = 3
-              object grbDesiredStart: TGroupBox
-                Left = 7
-                Top = 20
-                Width = 166
-                Height = 101
-                Caption = #1053#1072#1095#1072#1083#1100#1085#1072#1103' '#1090#1086#1095#1082#1072
+              Left = 0
+              Top = 88
+              Width = 186
+              Height = 319
+              Anchors = [akLeft, akTop, akRight, akBottom]
+              TabOrder = 1
+              object pnlAddDesiredPoint: TPanel
+                Left = 2
+                Top = 197
+                Width = 182
+                Height = 120
+                Align = alBottom
+                Anchors = [akRight, akBottom]
+                BevelOuter = bvNone
                 TabOrder = 0
+                Visible = False
                 object Label10: TLabel
-                  Left = 5
-                  Top = 19
+                  Left = 13
+                  Top = 60
                   Width = 33
                   Height = 13
                   Caption = #1044#1086#1083#1075'.:'
                 end
                 object Label11: TLabel
-                  Left = 8
-                  Top = 46
+                  Left = 16
+                  Top = 41
                   Width = 30
                   Height = 13
                   Caption = #1064#1080#1088'.:'
                 end
-                object btnAddDesiredStart: TButton
-                  Left = 103
-                  Top = 69
-                  Width = 56
-                  Height = 25
-                  Caption = #1048#1079#1084#1077#1085#1080#1090#1100
-                  TabOrder = 0
-                  OnClick = btnAddDesiredPointClick
-                end
-                object edDesiredStartLong: TEdit
-                  Left = 40
-                  Top = 15
-                  Width = 119
-                  Height = 21
-                  Enabled = False
-                  TabOrder = 1
-                end
-                object edDesiredStartLatt: TEdit
-                  Left = 40
-                  Top = 42
-                  Width = 119
-                  Height = 21
-                  Enabled = False
-                  TabOrder = 2
-                end
-              end
-              object Button3: TButton
-                Left = 8
-                Top = 234
-                Width = 166
-                Height = 25
-                Caption = #1057#1087#1080#1089#1086#1082' '#1087#1086#1074#1086#1088#1086#1090#1085#1099#1093' '#1087#1091#1085#1082#1090#1086#1074
-                TabOrder = 1
-              end
-              object grbDesiredStop: TGroupBox
-                Left = 7
-                Top = 127
-                Width = 166
-                Height = 101
-                Caption = #1050#1086#1085#1077#1095#1085#1072#1103' '#1090#1086#1095#1082#1072
-                TabOrder = 2
                 object Label12: TLabel
-                  Left = 5
-                  Top = 19
-                  Width = 33
-                  Height = 13
-                  Caption = #1044#1086#1083#1075'.:'
+                  Left = 15
+                  Top = 1
+                  Width = 154
+                  Height = 26
+                  Caption = #1042#1074#1077#1076#1080#1090#1077' '#1079#1085#1072#1095#1077#1085#1080#1103' '#1082#1086#1086#1088#1076#1080#1085#1072#1090' '#1080#1083#1080' '#1091#1082#1072#1078#1080#1090#1077' '#1090#1086#1095#1082#1091' '#1085#1072' '#1082#1072#1088#1090#1077':'
+                  WordWrap = True
                 end
-                object Label13: TLabel
-                  Left = 8
-                  Top = 46
-                  Width = 30
-                  Height = 13
-                  Caption = #1064#1080#1088'.:'
-                end
-                object btnAddDesiredStop: TButton
-                  Left = 103
-                  Top = 69
+                object btnAcceptDesiredPoint: TButton
+                  Left = 115
+                  Top = 87
                   Width = 56
                   Height = 25
-                  Caption = #1048#1079#1084#1077#1085#1080#1090#1100
+                  Action = acAcceptDesiredPoint
                   TabOrder = 0
-                  OnClick = btnAddDesiredPointClick
                 end
-                object edDesiredStopLong: TEdit
-                  Left = 40
-                  Top = 15
+                object edDesiredPointLatt: TEdit
+                  Left = 52
+                  Top = 33
                   Width = 119
                   Height = 21
-                  Enabled = False
                   TabOrder = 1
                 end
-                object edDesiredStopLatt: TEdit
-                  Left = 40
-                  Top = 42
+                object edDesiredPointLong: TEdit
+                  Left = 52
+                  Top = 60
                   Width = 119
                   Height = 21
-                  Enabled = False
                   TabOrder = 2
+                end
+                object Button1: TButton
+                  Left = 53
+                  Top = 87
+                  Width = 56
+                  Height = 25
+                  Action = acDeclineDesiredPoint
+                  TabOrder = 3
+                end
+              end
+              object pnlDesiredPoints: TPanel
+                Left = 2
+                Top = 15
+                Width = 182
+                Height = 182
+                Align = alClient
+                BevelOuter = bvNone
+                TabOrder = 1
+                DesignSize = (
+                  182
+                  182)
+                object grDesiredPoints: TStringGrid
+                  Left = 0
+                  Top = 0
+                  Width = 182
+                  Height = 146
+                  Align = alTop
+                  Anchors = [akLeft, akTop, akRight, akBottom]
+                  ColCount = 3
+                  DefaultColWidth = 70
+                  RowCount = 2
+                  Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRowSelect]
+                  TabOrder = 0
+                end
+                object btnAddDesiredPoint: TButton
+                  Left = 126
+                  Top = 152
+                  Width = 56
+                  Height = 25
+                  Action = acAddDesiredPoint
+                  Anchors = [akRight, akBottom]
+                  TabOrder = 1
+                end
+                object btnClearDesiredPoints: TButton
+                  Left = 2
+                  Top = 152
+                  Width = 56
+                  Height = 25
+                  Action = acClearDesiredPoints
+                  Anchors = [akRight, akBottom]
+                  TabOrder = 2
+                end
+                object btnEditDesiredPoint: TButton
+                  Left = 64
+                  Top = 152
+                  Width = 56
+                  Height = 25
+                  Action = acEditDesiredPoint
+                  Anchors = [akRight, akBottom]
+                  TabOrder = 3
                 end
               end
             end
             object chbDesiredTrack: TCheckBox
-              Left = 7
-              Top = 92
+              Left = 11
+              Top = 80
               Width = 135
               Height = 17
-              Caption = #1046#1077#1083#1072#1077#1084#1072#1103' '#1090#1088#1072#1077#1082#1090#1086#1088#1080#1103
+              Action = acSetDesiredTrackAvilaible
+              TabOrder = 0
+            end
+            object chbTrack: TCheckBox
+              Left = 11
+              Top = -2
+              Width = 130
+              Height = 17
+              Action = acSetTrackAvilaible
               TabOrder = 2
-              OnClick = chbDesiredTrackClick
             end
           end
         end
@@ -475,7 +491,7 @@ object frmMain: TfrmMain
   object ToolBar1: TToolBar
     Left = 0
     Top = 0
-    Width = 900
+    Width = 897
     Height = 25
     Customizable = True
     Images = ImageList1
@@ -496,7 +512,8 @@ object frmMain: TfrmMain
     object btnDefaultMode: TToolButton
       Left = 31
       Top = 0
-      Action = acChangeMapMouseMode
+      Action = acSetMapMouseMode
+      Down = True
       Grouped = True
       ImageIndex = 7
       Style = tbsCheck
@@ -504,7 +521,7 @@ object frmMain: TfrmMain
     object btnDragMode: TToolButton
       Left = 54
       Top = 0
-      Action = acChangeMapMouseMode
+      Action = acSetMapMouseMode
       Grouped = True
       ImageIndex = 4
       Style = tbsCheck
@@ -512,8 +529,7 @@ object frmMain: TfrmMain
     object btnZoomMode: TToolButton
       Left = 77
       Top = 0
-      Action = acChangeMapMouseMode
-      Down = True
+      Action = acSetMapMouseMode
       Grouped = True
       ImageIndex = 0
       Style = tbsCheck
@@ -668,8 +684,8 @@ object frmMain: TfrmMain
       Caption = #1052#1072#1089#1096#1090#1072#1073
       OnExecute = acChangeScaleExecute
     end
-    object acChangeMapMouseMode: TAction
-      OnExecute = acChangeMapMouseModeExecute
+    object acSetMapMouseMode: TAction
+      OnExecute = acSetMapMouseModeExecute
     end
     object acZoomIn: TAction
       Caption = #1055#1088#1080#1073#1083#1080#1079#1080#1090#1100
@@ -680,6 +696,36 @@ object frmMain: TfrmMain
       Caption = #1054#1090#1076#1072#1083#1080#1090#1100
       ImageIndex = 2
       OnExecute = acZoomOutExecute
+    end
+    object acAddDesiredPoint: TAction
+      Caption = #1044#1086#1073#1072#1074#1080#1090#1100
+      OnExecute = acAddDesiredPointExecute
+    end
+    object acAcceptDesiredPoint: TAction
+      Caption = #1054#1050
+      OnExecute = acAcceptDesiredPointExecute
+      OnUpdate = acAcceptDesiredPointUpdate
+    end
+    object acClearDesiredPoints: TAction
+      Caption = #1054#1095#1080#1089#1090#1080#1090#1100
+      OnExecute = acClearDesiredPointsExecute
+    end
+    object acDeclineDesiredPoint: TAction
+      Caption = #1054#1090#1084#1077#1085#1072
+      OnExecute = acDeclineDesiredPointExecute
+    end
+    object acEditDesiredPoint: TAction
+      Caption = #1048#1079#1084#1077#1085#1080#1090#1100
+      OnExecute = acEditDesiredPointExecute
+      OnUpdate = acEditDesiredPointUpdate
+    end
+    object acSetTrackAvilaible: TAction
+      Caption = #1056#1077#1072#1083#1100#1085#1072#1103' '#1090#1088#1072#1077#1082#1090#1086#1088#1080#1103
+      OnExecute = acSetTrackAvilaibleExecute
+    end
+    object acSetDesiredTrackAvilaible: TAction
+      Caption = #1069#1090#1072#1083#1086#1085#1085#1072#1103' '#1090#1088#1072#1077#1082#1090#1086#1088#1080#1103
+      OnExecute = acSetDesiredTrackAvilaibleExecute
     end
   end
   object TrackQuery: TADOQuery
@@ -697,7 +743,7 @@ object frmMain: TfrmMain
     Left = 576
     Top = 40
     Bitmap = {
-      494C010108009000580010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C010108009000780010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
