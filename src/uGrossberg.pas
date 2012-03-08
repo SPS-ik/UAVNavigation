@@ -4,7 +4,7 @@ interface
 uses
   Windows, Messages, SysUtils, Variants, Classes,
   Math,
-  RK_Method;
+  uRK;
 
 Type
 
@@ -52,7 +52,8 @@ Type
     FAlfa: Double;
     FNeurons: TNeuronCollection;
     procedure SetNeurons(const Value: TNeuronCollection);
-    function Equation(Vars: TVarsArray; CurrVar: Integer): Extended;
+    procedure Equations(var t: TFloat; var X: TFloatVector;
+                var RP: TFloatVector);
   public
     constructor Create(A,B, Mu, Alfa: Double);
     destructor Destroy; override;
@@ -161,17 +162,33 @@ end;
 procedure TGrNetwork.CalcActivity;
 var
   i: Integer;
-  Fun: TFun;
-  Ins: TInitArray;    
-  Outs: TResArray;
+  tOut, InitConds: TFloatVector;
+  XOuts: TFloatMatrix;
+  Points: Cardinal;
+  First, Last: TFloat;
+  StepsFact: Cardinal;
 begin
-  Fun := Equation;
+  First := 0.0;
+  Last  := 10.0;
+  Points := 2; //points for output
+  StepsFact := 10000; //all steps inside function = 10*StepsFact
+
+  SetLength(InitConds, FNeurons.Count);
   for i := 0 to FNeurons.Count - 1 do
   begin
-    SetLength(Ins, Length(Ins) + 1);
-    Ins[i] := FNeurons[i].Activity;
+    InitConds[i] := FNeurons[i].Activity;
   end;
-  Runge_Kutt(Fun,FNeurons.Count,1,10,1000,Ins,Outs);
+  SetLength(tOut, Points);
+  SetLength(XOuts, FNeurons.Count, Points);
+
+  if rk4fixed(Equations, InitConds, First, Last, tOut, XOuts, StepsFact ) = 0 then
+  begin
+    for i := 0 to FNeurons.Count - 1 do
+    begin
+      FNeurons[i].Activity := XOuts[i, Points-1];
+    end;
+  end;
+  XOuts := Nil; tOut := Nil; InitConds := Nil;
 end;
 
 constructor TGrNetwork.Create(A,B, Mu, Alfa: Double);
@@ -189,7 +206,8 @@ begin
   inherited;
 end;
 
-function TGrNetwork.Equation(Vars: TVarsArray; CurrVar: Integer): Extended;
+procedure TGrNetwork.Equations(var t: TFloat; var X: TFloatVector;
+                var RP: TFloatVector);
 
   function E(i: Integer): Extended;
   var
@@ -213,18 +231,24 @@ function TGrNetwork.Equation(Vars: TVarsArray; CurrVar: Integer): Extended;
     Result := E1 + E2;
   end;
 
+  function SumNeibs(const CurrVar: Integer): Extended;
+  var
+    i: Integer;
+  begin
+    for i := 0 to Length(X) - 1 do
+    begin
+      if (i <> CurrVar) and (FNeurons.VisibilityGraph[CurrVar, i] <> 0) then
+        Result := Result + X[i]*(Mu / FNeurons.GetDistance(CurrVar, i))*FNeurons.VisibilityGraph[CurrVar, i];
+    end;
+  end;
+
 var
-  SumNeibs: Extended;
   i: Integer;
 begin
-  SumNeibs := 0;
-  for i := 0 to Length(Vars) - 2 do
-  begin
-    if i <> CurrVar then    
-      SumNeibs := SumNeibs + Vars[i+1]*(Mu / FNeurons.GetDistance(CurrVar, i))*FNeurons.VisibilityGraph[CurrVar, i];
-  end;
-    
-  Result:= -A * Vars[CurrVar+1] + (B - Vars[CurrVar+1]) * (E(CurrVar) + SumNeibs)
+  for i := 0 to Length(X) - 1 do
+  begin        
+    RP[i] := -A * X[i] + (B - X[i]) * (E(i) + SumNeibs(i))
+  end;  
 end;
 
 procedure TGrNetwork.SetNeurons(const Value: TNeuronCollection);

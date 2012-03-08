@@ -8,7 +8,7 @@ uses
   fDBMap in 'fDBMap.pas' {frmDBMaps},
   fLayers in 'fLayers.pas' {frmLayers},
   uGrossberg in 'uGrossberg.pas',
-  RK_Method in 'RK_Method.pas';
+  uRK in 'uRK.pas';
 
 {$R *.res}
 
