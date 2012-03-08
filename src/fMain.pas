@@ -115,6 +115,7 @@ type
     acEditDesiredPoint: TAction;
     acSetTrackAvilaible: TAction;
     acSetDesiredTrackAvilaible: TAction;
+    Button2: TButton;
     procedure FormCreate(Sender: TObject);
     procedure cbRefreshTimeChange(Sender: TObject);
     procedure colbNavObjrColorChange(Sender: TObject);
@@ -148,6 +149,7 @@ type
     procedure acClearDesiredPointsExecute(Sender: TObject);
     procedure acEditDesiredPointExecute(Sender: TObject);
     procedure acEditDesiredPointUpdate(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
   private
     { Private declarations }
     FocusedComp: TControl;
@@ -171,7 +173,7 @@ var
 
 implementation
 
-uses fDBMap, fLayers;  
+uses fDBMap, fLayers, uGrossberg;  
 
 
 {$R *.dfm}
@@ -587,6 +589,58 @@ procedure TfrmMain.acZoomOutExecute(Sender: TObject);
 begin
   trbScale.Position := trbScale.Position - trbScale.Frequency;
   acChangeScale.Execute;
+end;
+
+procedure TfrmMain.Button2Click(Sender: TObject);
+var
+  GR: TGrNetwork;
+  Neuron: TNeuron;
+begin
+  GR := TGrNetwork.Create(10, 1, 0.05, 0.1);
+  Neuron := GR.Neurons.Add;
+  Neuron.X := 2;
+  Neuron.Y := 1;
+  Neuron.Activity := 1;
+
+  Neuron := GR.Neurons.Add;
+  Neuron.X := 1;
+  Neuron.Y := 3;
+  Neuron.Activity := 1;  
+
+  Neuron := GR.Neurons.Add;
+  Neuron.X := 5;
+  Neuron.Y := 3;
+  Neuron.Activity := 1;
+
+  Neuron := GR.Neurons.Add;
+  Neuron.X := 5;
+  Neuron.Y := 6;
+  Neuron.Activity := 1;
+
+  Neuron := GR.Neurons.Add;
+  Neuron.X := 1;
+  Neuron.Y := 6;
+  Neuron.Activity := 1;
+
+  Neuron := GR.Neurons.Add;
+  Neuron.X := 4;
+  Neuron.Y := 7;
+  Neuron.Activity := 1;
+
+  GR.Neurons.StartIndex := 0;
+  GR.Neurons.FinishIndex := 5;
+
+  GR.Neurons.VisibilityGraph[0,1] := 1;
+  GR.Neurons.VisibilityGraph[0,2] := 1;
+  GR.Neurons.VisibilityGraph[1,2] := 1;
+  GR.Neurons.VisibilityGraph[1,4] := 1;
+  GR.Neurons.VisibilityGraph[2,3] := 1;
+  GR.Neurons.VisibilityGraph[3,4] := 1;
+  GR.Neurons.VisibilityGraph[3,5] := 1;
+  GR.Neurons.VisibilityGraph[4,5] := 1;
+
+  GR.CalcActivity;
+
 end;
 
 end.

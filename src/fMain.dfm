@@ -57,6 +57,15 @@ object frmMain: TfrmMain
           Width = 200
         end>
     end
+    object Button2: TButton
+      Left = 400
+      Top = 128
+      Width = 75
+      Height = 25
+      Caption = 'Button2'
+      TabOrder = 1
+      OnClick = Button2Click
+    end
   end
   object pnlObjects: TPanel
     Left = 693
@@ -743,7 +752,7 @@ object frmMain: TfrmMain
     Left = 576
     Top = 40
     Bitmap = {
-      494C010108009000780010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
+      494C0101080090007C0010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000003000000001002000000000000030
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000

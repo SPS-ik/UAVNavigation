@@ -6,7 +6,9 @@ uses
   shpAPI129 in 'shpAPI129.pas',
   uDrawingClasses in 'uDrawingClasses.pas',
   fDBMap in 'fDBMap.pas' {frmDBMaps},
-  fLayers in 'fLayers.pas' {frmLayers};
+  fLayers in 'fLayers.pas' {frmLayers},
+  uGrossberg in 'uGrossberg.pas',
+  RK_Method in 'RK_Method.pas';
 
 {$R *.res}
 
