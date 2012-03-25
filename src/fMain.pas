@@ -116,6 +116,19 @@ type
     acSetTrackAvilaible: TAction;
     acSetDesiredTrackAvilaible: TAction;
     Button2: TButton;
+    tblObstacles: TADOTable;
+    tblObstaclesID: TAutoIncField;
+    tblObstaclesName: TStringField;
+    tblObstaclesEnable: TBooleanField;
+    btnEditObstacles: TToolButton;
+    acEditObstacles: TAction;
+    DataSource3: TDataSource;
+    tblObstaclePoints: TADOTable;
+    tblObstaclePointsID: TAutoIncField;
+    tblObstaclePointsObstacle_ID: TAutoIncField;
+    tblObstaclePointsX: TFloatField;
+    tblObstaclePointsY: TFloatField;
+    DataSource4: TDataSource;
     procedure FormCreate(Sender: TObject);
     procedure cbRefreshTimeChange(Sender: TObject);
     procedure colbNavObjrColorChange(Sender: TObject);
@@ -130,7 +143,6 @@ type
     procedure tblNavObjectsAfterScroll(DataSet: TDataSet);
     procedure tblNavObjectsColorChange(Sender: TField);
     procedure acMapRefreshFullExecute(Sender: TObject);
-    procedure tblNavObjectsNameChange(Sender: TField);
     procedure imgMapMouseEnter(Sender: TObject);
     procedure dtpDateFromChange(Sender: TObject);
     procedure dtpDateToChange(Sender: TObject);
@@ -150,6 +162,7 @@ type
     procedure acEditDesiredPointExecute(Sender: TObject);
     procedure acEditDesiredPointUpdate(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure acEditObstaclesExecute(Sender: TObject);
   private
     { Private declarations }
     FocusedComp: TControl;
@@ -160,6 +173,7 @@ type
     procedure RefreshNavObjects;
     procedure RefreshDesiredTrackPointsList;
     procedure ShowDesiredTrackPointsPanel;
+    procedure RefreshObstacles;
   public
     { Public declarations }
     function RandomColor: Tcolor;
@@ -173,7 +187,7 @@ var
 
 implementation
 
-uses fDBMap, fLayers, uGrossberg;  
+uses fDBMap, fLayers, uGrossberg, fObstacles;
 
 
 {$R *.dfm}
@@ -397,8 +411,73 @@ begin
     finally
       EnableControls;
     end;
-  end;  
+  end;
   FManualObjectChange := True;
+end;
+
+procedure TfrmMain.RefreshObstacles;
+
+  procedure GetObstaclePoints(Obstacle: TObstacle);
+  var
+    sql: string;
+    Point: TMyPoint;
+  begin
+    sql := format('Select X, Y from Obstacle_Vertices where Obstacle_ID = %d', [Obstacle.ID]);
+
+    TrackQuery.SQL.Clear;
+    TrackQuery.SQL.Add(sql);
+    TrackQuery.Active := false;
+    TrackQuery.Active := True;
+
+    with TrackQuery do
+      begin
+        DisableControls;
+        try
+          First;
+          while not Eof do
+          begin
+            Point.X := FindField('X').Value;
+            Point.Y := FindField('Y').Value;
+            Obstacle.addVertex(Point);
+            next;
+          end;
+        finally
+          EnableControls;
+        end;
+      end;
+  end;
+
+var
+  CurrIndex: Integer;
+  Obstacle: TObstacle;
+begin
+  conNavigationDB.Connected := True;
+  tblObstacles.Active := True;
+
+  tblObstacles.Close;
+  tblObstacles.Open;
+
+  with tblObstacles do
+  begin
+    DisableControls;
+    try
+      First;
+      while not Eof do
+      begin
+        CurrIndex := LayerLoader.IndexOfObstacle(tblObstaclesID.value);
+        if CurrIndex = -1 then
+        begin
+          Obstacle := TObstacle.Create(tblObstaclesID.value,
+            tblObstaclesName.value, tblObstaclesEnable.Value);
+          GetObstaclePoints(Obstacle);
+          LayerLoader.addObstacle(Obstacle);
+        end;
+        Next;
+      end;
+    finally
+      EnableControls;
+    end;
+  end;
 end;
 
 procedure TfrmMain.ShowDesiredTrackPointsPanel;
@@ -453,15 +532,9 @@ end;
 
 procedure TfrmMain.tblNavObjectsIs_VisibleChange(Sender: TField);
 begin
-  LayerLoader.NavObjects[LayerLoader.SelectedNavObjectIndex].Visible :=
-    tblNavObjectsIs_Visible.Value;
+  LayerLoader.Obstacles[LayerLoader.IndexOfObstacle(tblObstaclesID.Value)].Visible :=
+    tblObstaclesEnable.Value;
   LayerLoader.ReDraw(cbFollowCurrNavObject.Checked);
-end;
-
-procedure TfrmMain.tblNavObjectsNameChange(Sender: TField);
-begin
-  LayerLoader.NavObjects[LayerLoader.SelectedNavObjectIndex].Name :=
-    tblNavObjectsName.Value;
 end;
 
 procedure TfrmMain.acAcceptDesiredPointExecute(Sender: TObject);
@@ -554,13 +627,19 @@ end;
 
 procedure TfrmMain.acEditLayersExecute(Sender: TObject);
 begin
-  frmLayers.ShowModal;
+  frmLayers.Show;
+end;
+
+procedure TfrmMain.acEditObstaclesExecute(Sender: TObject);
+begin
+  frmObstacles.Show;
 end;
 
 procedure TfrmMain.acMapRefreshFullExecute(Sender: TObject);
 begin    
   tmrRefresh.Enabled := False;
   RefreshNavObjects;
+  RefreshObstacles;
   LayerLoader.ReDraw(cbFollowCurrNavObject.Checked);
   tmrRefresh.Enabled := True;
 end;
@@ -594,53 +673,35 @@ end;
 procedure TfrmMain.Button2Click(Sender: TObject);
 var
   GR: TGrNetwork;
-  Neuron: TNeuron;
+  Path: TIntArray;
+  LayerPoints: TMyPointsArr;
+  i: Integer;
 begin
   GR := TGrNetwork.Create(10, 1, 0.05, 0.1);
-  Neuron := GR.Neurons.Add;
-  Neuron.X := 2;
-  Neuron.Y := 1;
-  Neuron.Activity := 1;
 
-  Neuron := GR.Neurons.Add;
-  Neuron.X := 1;
-  Neuron.Y := 3;
-  Neuron.Activity := 1;  
+  for i := 0 to Length(LayerPoints)-1 do
+  begin
+    GR.AddNeuron(LayerPoints[i].X,LayerPoints[i].Y,1);
+  end;
 
-  Neuron := GR.Neurons.Add;
-  Neuron.X := 5;
-  Neuron.Y := 3;
-  Neuron.Activity := 1;
+//  GR.AddNeuron(2,1,1);
+//  GR.AddNeuron(1,3,1);
+//  GR.AddNeuron(5,3,1);
+//  GR.AddNeuron(5,6,1);
+//  GR.AddNeuron(1,6,1);
+//  GR.AddNeuron(4,7,1);
 
-  Neuron := GR.Neurons.Add;
-  Neuron.X := 5;
-  Neuron.Y := 6;
-  Neuron.Activity := 1;
+//  GR.InitVisibilityGraph;
+//  GR.VisibilityGraph[0,1] := 1;
+//  GR.VisibilityGraph[0,2] := 1;
+//  GR.VisibilityGraph[1,2] := 1;
+//  GR.VisibilityGraph[1,4] := 1;
+//  GR.VisibilityGraph[2,3] := 1;
+//  GR.VisibilityGraph[3,4] := 1;
+//  GR.VisibilityGraph[3,5] := 1;
+//  GR.VisibilityGraph[4,5] := 1;
 
-  Neuron := GR.Neurons.Add;
-  Neuron.X := 1;
-  Neuron.Y := 6;
-  Neuron.Activity := 1;
-
-  Neuron := GR.Neurons.Add;
-  Neuron.X := 4;
-  Neuron.Y := 7;
-  Neuron.Activity := 1;
-
-  GR.Neurons.StartIndex := 0;
-  GR.Neurons.FinishIndex := 5;
-
-  GR.Neurons.VisibilityGraph[0,1] := 1;
-  GR.Neurons.VisibilityGraph[0,2] := 1;
-  GR.Neurons.VisibilityGraph[1,2] := 1;
-  GR.Neurons.VisibilityGraph[1,4] := 1;
-  GR.Neurons.VisibilityGraph[2,3] := 1;
-  GR.Neurons.VisibilityGraph[3,4] := 1;
-  GR.Neurons.VisibilityGraph[3,5] := 1;
-  GR.Neurons.VisibilityGraph[4,5] := 1;
-
-  GR.CalcActivity;
-
+  GR.GetOptimalPath(0, 90, Path);
 end;
 
 end.

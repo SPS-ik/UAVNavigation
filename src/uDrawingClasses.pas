@@ -26,7 +26,7 @@ Type
 
      function getColor(): TColor;
      procedure setColor(Clr: TColor );
-     
+
      function GetMinBounds(Index: Integer): Double;
      function GetMaxBounds(Index: Integer): Double;
 
@@ -47,6 +47,7 @@ Type
 
      property Visible: Boolean read getVisible write setVisible;
      property Color: TColor read getColor write setColor;
+     procedure GetLayerPoints(var LayerPoints: TMyPointsArr);
 
   end;
 
@@ -92,7 +93,7 @@ Type
      property TrackPoints[Index: Integer]: TMyPoint read getTrackPoint write setTrackPoint;
      property DesiredTrackPoints[Index: Integer]: TMyPoint read getDesiredTrackPoint write setDesiredTrackPoint;
      property Visible: Boolean read getVisible write setVisible;
-     property Color: TColor read getColor write setColor; 
+     property Color: TColor read getColor write setColor;
      property TrackPointsCount: Integer read FTrackPointsCount;
      property DesiredTrackPointsCount: Integer read FDesiredTrackPointsCount;
 
@@ -100,7 +101,24 @@ Type
      procedure addDesiredTrackPoint(TrackPoint: TMyPoint);   
      procedure ClearTrack;
      procedure ClearDesiredTrack;
+  end;
 
+  TObstacle = class
+    private   
+      FID: Integer;  
+      FName: string;
+      FVisible: Boolean;
+      FVertices: TMyPointsArr;
+      FVerticesCount: Integer;
+      function getVertex(Index: Integer): TMyPoint;
+      procedure setVertex(Index: Integer; Value: TMyPoint);
+    public
+      constructor Create(ID: integer; AName: string; AVisible: Boolean);
+      property ID: Integer read FID;  
+      property Name: string read FName write FName;
+      property Visible: Boolean read FVisible write FVisible;
+      property Vertices[Index: Integer]: TMyPoint read getVertex write setVertex;
+      procedure addVertex(Vertex: TMyPoint);
   end;
 
   TShapeMap = class
@@ -108,10 +126,12 @@ Type
       FImg: TImage;
       FLayerCount: Integer;
       FNavObjectCount: Integer;
+      FObstacleCount: Integer;
       FScale: double;
       FX_c, FY_c: double;
-      FLayers: array of TLayer;     
-      FNavObjects: array of TNavObject;
+      FLayers: array of TLayer;
+      FNavObjects: array of TNavObject;  
+      FObstacles: array of TObstacle;
       FCurrNavObjectIndex: Integer;
       FAllowDrawTrack: Boolean;
       FAllowDrawDesiredTrack: Boolean;
@@ -129,18 +149,23 @@ Type
       function getLayer(Index: Integer): TLayer;
       procedure setLayer(Index: Integer; Value: TLayer);
       function getNavObject(Index: Integer): TNavObject;
-      procedure setNavObject(Index: Integer; Value: TNavObject);
+      procedure setNavObject(Index: Integer; Value: TNavObject); 
+      function getObstacle(Index: Integer): TObstacle;
+      procedure setObstacle(Index: Integer; Value: TObstacle);
       procedure DrawLayer(Layer: TLayer);
-      procedure DrawNavObject(NavObject: TNavObject; IsCurrObj: Boolean = False);
+      procedure DrawNavObject(NavObject: TNavObject; IsCurrObj: Boolean = False); 
+      procedure DrawObstacle(Obstacle: TObstacle);
 
     public
       constructor create(var Img: TImage; Scale: double);
 
       property LayerCount: Integer read FLayerCount;
       property NavObjectCount: Integer read FNavObjectCount;
+      property ObstacleCount: Integer read FObstacleCount;
       property Scale: Double read getScale write setScale;
       property Layers[Index: Integer]: TLayer read getLayer write setLayer;
-      property NavObjects[Index: Integer]: TNavObject read getNavObject write setNavObject;
+      property NavObjects[Index: Integer]: TNavObject read getNavObject write setNavObject; 
+      property Obstacles[Index: Integer]: TObstacle read getObstacle write setObstacle;
       property SelectedNavObjectIndex: Integer read FCurrNavObjectIndex write FCurrNavObjectIndex;
       property AllowDrawTrack: Boolean read FAllowDrawTrack write FAllowDrawTrack;
       property AllowDrawDesiredTrack: Boolean read FAllowDrawDesiredTrack write FAllowDrawDesiredTrack;
@@ -148,8 +173,10 @@ Type
       property Y_c: double read FY_c write FY_c;
       procedure addLayer(layer: TLayer);
       procedure addNavObject(NavObject: TNavObject);
-      procedure ClearNavObjects;
-      function IndexOfNavObject(ID: Integer): Integer;
+      procedure addObstacle(Obstacle: TObstacle);
+      procedure ClearNavObjects; 
+      function IndexOfNavObject(ID: Integer): Integer; 
+      function IndexOfObstacle(ID: Integer): Integer;
       procedure ReDraw(AFollowCurrNavObject: Boolean = False);
       procedure SetMapCenter(X_c, Y_c: double); 
       procedure MoveMapImg(NewImgC_x, NewImgC_y: Double);
@@ -179,11 +206,30 @@ begin
   FColor := Color;
 end;
 
-
-
 function TLayer.getColor: TColor;
 begin 
   Result := FColor;
+end;
+
+procedure TLayer.GetLayerPoints(var LayerPoints: TMyPointsArr);
+var
+  i, j: Integer;
+  obj: PShpObject;
+begin
+  for i := 0 to EntitiesCount - 1 do
+  begin
+    obj := SHPReadObject(Handle, i);
+    if obj.nSHPType = SHPT_POLYGON then
+    begin
+      for j := 0 to obj.nVertices - 1 do
+      begin  
+        SetLength(LayerPoints, Length(LayerPoints)+1);
+        LayerPoints[Length(LayerPoints)-1].X :=  obj.padfX[j];
+        LayerPoints[Length(LayerPoints)-1].Y :=  obj.padfY[j];
+      end;
+    end;
+    SHPDestroyObject(obj);
+  end;
 end;
 
 function TLayer.GetMaxBounds(Index: Integer): Double;
@@ -237,6 +283,15 @@ begin
   SetLength(FNavObjects, length(FNavObjects) + 1);
   FNavObjects[length(FNavObjects) - 1] := NavObject;
   inc(FNavObjectCount);
+end;
+
+procedure TShapeMap.addObstacle(Obstacle: TObstacle);
+begin
+  if not Assigned(Obstacle) then
+    Exit;
+  SetLength(FObstacles, length(FObstacles) + 1);
+  FObstacles[length(FObstacles) - 1] := Obstacle;
+  inc(FObstacleCount);
 end;
 
 function TShapeMap.castCoor_X(x: double): Integer;
@@ -379,11 +434,26 @@ begin
   Fimg.Canvas.Brush.Color := BrCol;
 end;
 
+procedure TShapeMap.DrawObstacle(Obstacle: TObstacle);
+var
+  points: TPointsArr;
+  i: Integer;
+begin
+	if  (not Obstacle.Visible) then
+    exit;
+  SetLength(points, Obstacle.FVerticesCount);
+	for i := 0 to Obstacle.FVerticesCount - 1 do
+  begin
+    points[i].X :=  castCoor_X(Obstacle.Vertices[i].X);
+    points[i].Y :=  castCoor_Y(Obstacle.Vertices[i].Y);
+  end;
+  Fimg.Canvas.Polygon(points);
+end;
+
 procedure TShapeMap.draw_arc(obj: PSHPObject; var img: TImage);
 var
   i: Integer;
 begin
-//
 	for i := 0 to obj.nVertices - 2 do
   begin
     img.Canvas.MoveTo(castCoor_X(obj.padfX[i]), castCoor_Y(obj.padfY[i]));
@@ -416,7 +486,6 @@ begin
   img.Canvas.Polygon(points);
 end;
 
-
 function TShapeMap.getLayer(Index: Integer): TLayer;
 begin
   if((Index >= 0) and (Index <= Length(FLayers) - 1)) then
@@ -437,12 +506,20 @@ begin
     Result := nil;
 end;
 
+function TShapeMap.getObstacle(Index: Integer): TObstacle;
+begin
+  if((Index >= 0) and (Index <= Length(FObstacles) - 1)) then
+  begin
+    Result := FObstacles[Index];
+  end
+  else
+    Result := nil;
+end;
+
 function TShapeMap.getScale: double;
 begin
   Result := FScale;
 end;
-
-
 
 function TShapeMap.IndexOfNavObject(ID: Integer): Integer;
 var
@@ -451,6 +528,21 @@ begin
   for i := 0 to Length(FNavObjects) - 1 do
   begin
     if FNavObjects[i].ID = ID then
+    begin
+      Result := i;
+      exit;
+    end;
+  end;
+  Result := -1;
+end;
+
+function TShapeMap.IndexOfObstacle(ID: Integer): Integer;
+var
+  i: Integer;
+begin
+  for i := 0 to Length(FObstacles) - 1 do
+  begin
+    if FObstacles[i].ID = ID then
     begin
       Result := i;
       exit;
@@ -483,7 +575,6 @@ begin
     DrawLayer(FLayers[i]);
   end;
 
-
   for i := 0 to FNavObjectCount - 1 do
   begin
     if i = FCurrNavObjectIndex then
@@ -494,6 +585,12 @@ begin
       IsCurrObj := False;
     DrawNavObject(FNavObjects[i], IsCurrObj);
   end;
+
+  for i := 0 to FObstacleCount - 1 do
+  begin
+    DrawObstacle(FObstacles[i]);
+  end;
+
 end;
 
 procedure TShapeMap.setLayer(Index: Integer; Value: TLayer);
@@ -515,12 +612,19 @@ end;
 
 procedure TShapeMap.setNavObject(Index: Integer; Value: TNavObject);
 begin
-  // “олько разрешенные допустимые индексные значени€
   if (Index >= 0) and (Index <= Length(FNavObjects) - 1)
   then
   begin
-    // —охранений нового значени€
     FNavObjects[Index] := Value;
+  end;
+end;
+
+procedure TShapeMap.setObstacle(Index: Integer; Value: TObstacle);
+begin
+  if (Index >= 0) and (Index <= Length(FObstacles) - 1)
+  then
+  begin
+    FObstacles[Index] := Value;
   end;
 end;
 
@@ -528,7 +632,6 @@ procedure TShapeMap.setScale(s: double);
 begin
   FScale := s;
 end;
-
 
 
 { TNavObject }
@@ -575,7 +678,7 @@ end;
 
 constructor TNavObject.Create(ID: integer; name: string; X: Double; Y: Double;
         Color: TColor = clBlue; Visible: Boolean = True);
-begin        
+begin
   FID := ID;
   Fname := Name;
   FX := X;
@@ -658,6 +761,42 @@ end;
 procedure TNavObject.SetY(Y: Double);
 begin  
   FY := Y;
+end;
+
+{ TObstacle }
+
+procedure TObstacle.addVertex(Vertex: TMyPoint);
+begin
+  inc(FVerticesCount);
+  SetLength(FVertices, FVerticesCount);
+  FVertices[FVerticesCount - 1] := Vertex;
+end;
+
+constructor TObstacle.Create(ID: integer; AName: string; AVisible: Boolean);
+begin  
+  FID := ID;
+  FName := AName;
+  FVisible := AVisible;
+  FVerticesCount := 0;
+end;
+
+function TObstacle.getVertex(Index: Integer): TMyPoint;
+begin
+  if((Index >= 0) and (Index <= Length(FVertices) - 1)) then
+  begin
+    Result := FVertices[Index];
+  end
+//  else
+//    Result := ;
+end;
+
+procedure TObstacle.setVertex(Index: Integer; Value: TMyPoint);
+begin
+  if (Index >= 0) and (Index <= Length(FVertices) - 1)
+  then
+  begin
+    FVertices[Index] := Value;
+  end;
 end;
 
 end.

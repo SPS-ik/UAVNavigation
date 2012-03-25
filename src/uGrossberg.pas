@@ -7,41 +7,26 @@ uses
   uRK;
 
 Type
-
+  TIntArray = array of Integer;
   TNeuron = class(TCollectionItem)
   private
     FX: Double;
     FY: Double;
     FActivity: Double;
-    function GetX: Double;
-    procedure SetX(X: Double);
-    function GetY: Double;
-    procedure SetY(Y: Double);
-    function GetActivity: Double;
-    procedure SetActivity(Activity: Double);
   public
     constructor Create(X: Double; Y: Double; Activity: Double);
-    property X: Double read GetX write SetX;
-    property Y: Double read GetY write SetY;
-    property Activity: Double read GetActivity write SetActivity;
+    property X: Double read FX write FX;
+    property Y: Double read FY write FY;
+    property Activity: Double read FActivity write FActivity;
   end;
 
   TNeuronCollection = class(TCollection)
   private                  
-    FVisibilityGraph: array of array of Integer; //заполн€етс€ 0-ми при добавлении нейрона
-    FStartIndex: Integer;
-    FFinishIndex: Integer;
     function GetItem(Index: Integer): TNeuron;
-    procedure SetItem(Index: Integer; const Value: TNeuron);  
-    procedure SetVisibility(i, j, Value: Integer);
-    function GetVisibility(i, j: Integer): Integer;
+    procedure SetItem(Index: Integer; const Value: TNeuron);
   public
-    function Add: TNeuron; 
-    function GetDistance(const i,j: Integer): Extended;
+    function Add: TNeuron;
     property Items[Index: Integer]: TNeuron read GetItem write SetItem; default;
-    property StartIndex: Integer read FStartIndex write FStartIndex default -1;
-    property FinishIndex: Integer read FFinishIndex write FFinishIndex default -1;
-    property VisibilityGraph[i, j: Integer]: Integer read GetVisibility write SetVisibility;
   end;
 
   TGrNetwork = class
@@ -51,9 +36,14 @@ Type
     FMu: Double;
     FAlfa: Double;
     FNeurons: TNeuronCollection;
+    FFinishIndex: Integer;   
+    FStartIndex: Integer;
+    FVisibilityGraph: array of array of Integer; //заполн€етс€ 0-ми при добавлении нейрона
     procedure SetNeurons(const Value: TNeuronCollection);
-    procedure Equations(var t: TFloat; var X: TFloatVector;
-                var RP: TFloatVector);
+    procedure CalcEquations(var t: TFloat; var X: TFloatVector; var RP: TFloatVector);   
+    procedure SetVisibility(i, j, Value: Integer);
+    function GetVisibility(i, j: Integer): Integer; 
+    procedure CalcActivity;
   public
     constructor Create(A,B, Mu, Alfa: Double);
     destructor Destroy; override;
@@ -62,7 +52,12 @@ Type
     property Mu: Double read FMu write FMu;
     property Alfa: Double read FAlfa write FAlfa;
     property Neurons: TNeuronCollection read FNeurons write SetNeurons;
-    procedure CalcActivity;
+    property VisibilityGraph[i, j: Integer]: Integer read GetVisibility write SetVisibility;
+    procedure AddNeuron(X, Y, Activity: Double);                   
+    procedure InitVisibilityGraph;
+    function GetDistance(const i,j: Integer): Double;
+    function GetOptimalPath(const StartIndex, FinishIndex: Integer;
+      var Path: TIntArray): Integer;
   end;
 
 implementation
@@ -76,56 +71,11 @@ begin
   FActivity := Activity;
 end;
 
-function TNeuron.GetActivity: Double;
-begin  
-  Result := FActivity;
-end;
-
-function TNeuron.GetX: Double;
-begin
-  Result := FX;
-end;
-
-function TNeuron.GetY: Double;
-begin  
-  Result := FY;
-end;
-
-procedure TNeuron.SetActivity(Activity: Double);
-begin  
-  FActivity := Activity;
-end;
-
-procedure TNeuron.SetX(X: Double);
-begin    
-  FX := X;
-end;
-
-procedure TNeuron.SetY(Y: Double);
-begin
-  FY := Y;
-end;
-
 { TNeuronCollection }
 
 function TNeuronCollection.Add: TNeuron;
-var
-  NewLength, i, j: Integer;
 begin          
   Result := TNeuron(inherited Add);
-  NewLength := Length(FVisibilityGraph) + 1;
-  SetLength(FVisibilityGraph, NewLength);
-  for i := 0 to Length(FVisibilityGraph) - 1 do
-    SetLength(FVisibilityGraph[i], NewLength);
-
-  for i := 0 to Length(FVisibilityGraph) - 1 do  
-    for j := 0 to Length(FVisibilityGraph[i]) - 1 do
-      FVisibilityGraph[i,j] := 0;
-end;
-
-function TNeuronCollection.GetDistance(const i, j: Integer): Extended;
-begin
-  Result := Sqrt(Sqr(Items[i].X - Items[j].X) + Sqr(Items[i].Y - Items[j].Y));
 end;
 
 function TNeuronCollection.GetItem(Index: Integer): TNeuron;
@@ -133,31 +83,22 @@ begin
   Result := TNeuron(inherited GetItem(Index));
 end;
 
-function TNeuronCollection.GetVisibility(i, j: Integer): Integer;
-begin
-  if (i >= 0) and (i <= Length(FVisibilityGraph) - 1) then
-    if (j >= 0) and (j <= Length(FVisibilityGraph[i]) - 1) then
-    begin
-      Result := FVisibilityGraph[i, j];
-    end;
-end;
-
 procedure TNeuronCollection.SetItem(Index: Integer; const Value: TNeuron);
 begin
   inherited SetItem(Index, Value);
 end;
 
-procedure TNeuronCollection.SetVisibility(i, j, Value: Integer);
-begin
-  if (i >= 0) and (i <= Length(FVisibilityGraph) - 1) then
-    if (j >= 0) and (j <= Length(FVisibilityGraph[i]) - 1) then
-    begin
-      FVisibilityGraph[i, j] := Value;  
-      FVisibilityGraph[j, i] := Value;
-    end;
-end;
-
 { TGrNetwork }
+
+procedure TGrNetwork.AddNeuron(X, Y, Activity: Double);
+var
+  Neuron: TNeuron;
+begin
+  Neuron := FNeurons.Add;
+  Neuron.X := X;
+  Neuron.Y := Y;
+  Neuron.Activity := Activity;
+end;
 
 procedure TGrNetwork.CalcActivity;
 var
@@ -181,7 +122,7 @@ begin
   SetLength(tOut, Points);
   SetLength(XOuts, FNeurons.Count, Points);
 
-  if rk4fixed(Equations, InitConds, First, Last, tOut, XOuts, StepsFact ) = 0 then
+  if rk4fixed(CalcEquations, InitConds, First, Last, tOut, XOuts, StepsFact ) = 0 then
   begin
     for i := 0 to FNeurons.Count - 1 do
     begin
@@ -206,21 +147,101 @@ begin
   inherited;
 end;
 
-procedure TGrNetwork.Equations(var t: TFloat; var X: TFloatVector;
+function TGrNetwork.GetDistance(const i, j: Integer): Double;
+begin
+  Result := Sqrt(Sqr(FNeurons[i].X - FNeurons[j].X) +
+    Sqr(FNeurons[i].Y - FNeurons[j].Y));
+end;
+
+
+function TGrNetwork.GetOptimalPath(const StartIndex, FinishIndex: Integer;
+  var Path: TIntArray): Integer;
+
+  function GetClosest(Index: Integer): Integer;
+  var
+    i: Integer;
+    TempActivity: Double;
+  begin
+    Result := -1;
+    //ƒвигаемс€ только к цели
+    //јктивность следующего нейрона не ниже чем у текущего
+    TempActivity := FNeurons[Index].Activity;
+    for i := 0 to Length(FVisibilityGraph) - 1 do
+    begin
+      if (FVisibilityGraph[Index, i] <> 0) and
+        (FNeurons[i].Activity > TempActivity) then
+      begin
+        TempActivity := FNeurons[i].Activity;
+        Result := i;
+      end;
+    end;
+  end;
+
+var
+  CurrIndex: Integer;
+begin
+  if (FinishIndex >= 0) and (FinishIndex < FNeurons.Count) and
+    (StartIndex >= 0) and (StartIndex < FNeurons.Count)then
+  begin
+    FFinishIndex := FinishIndex;
+    FStartIndex := StartIndex;
+    try
+      CalcActivity;
+      CurrIndex := StartIndex;
+      while (CurrIndex <> FinishIndex) and (CurrIndex <> -1) do
+      begin
+        SetLength(Path, Length(Path)+1);
+        Path[Length(Path)-1] := CurrIndex;
+        CurrIndex := GetClosest(CurrIndex);
+      end;      
+      SetLength(Path, Length(Path)+1);
+      Path[Length(Path)-1] := CurrIndex;
+      Result:=1;
+    except
+      Result := 0;
+    end;
+  end;
+end;
+
+function TGrNetwork.GetVisibility(i, j: Integer): Integer;
+begin
+  if (i >= 0) and (i <= Length(FVisibilityGraph) - 1) and
+   (j >= 0) and (j <= Length(FVisibilityGraph[i]) - 1) then
+  begin
+    Result := FVisibilityGraph[i, j];
+  end
+  else
+    Result := 0;
+end;
+
+procedure TGrNetwork.InitVisibilityGraph;
+var
+  i, j: Integer;
+begin
+  SetLength(FVisibilityGraph, FNeurons.Count);
+  for i := 0 to Length(FVisibilityGraph) - 1 do
+    SetLength(FVisibilityGraph[i], FNeurons.Count);
+
+  for i := 0 to Length(FVisibilityGraph) - 1 do
+    for j := 0 to Length(FVisibilityGraph[i]) - 1 do
+      FVisibilityGraph[i,j] := 0;
+end;
+
+procedure TGrNetwork.CalcEquations(var t: TFloat; var X: TFloatVector;
                 var RP: TFloatVector);
 
   function E(i: Integer): Extended;
   var
     E1, E2, Dist: Extended;
   begin
-    Dist := FNeurons.GetDistance(i, FNeurons.FinishIndex);
-    if Dist > (Alfa/100) then    
+    Dist := GetDistance(i, FFinishIndex);
+    if Dist > (Alfa/100) then
       E1 := Alfa / Dist
     //исправить на рассто€ние до перпендикул€ра к отрезку старт-финиш!!!!
     else
       E1 := 100;
 
-    if i = FNeurons.FinishIndex then
+    if i = FFinishIndex then
     begin
       E2 := 100;
     end
@@ -233,12 +254,20 @@ procedure TGrNetwork.Equations(var t: TFloat; var X: TFloatVector;
 
   function SumNeibs(const CurrVar: Integer): Extended;
   var
-    i: Integer;
+    j: Integer;
+    W, Distance: Double;
   begin
-    for i := 0 to Length(X) - 1 do
+    for j := 0 to Length(X) - 1 do
     begin
-      if (i <> CurrVar) and (FNeurons.VisibilityGraph[CurrVar, i] <> 0) then
-        Result := Result + X[i]*(Mu / FNeurons.GetDistance(CurrVar, i))*FNeurons.VisibilityGraph[CurrVar, i];
+      if (j <> CurrVar) and (VisibilityGraph[CurrVar, j] <> 0) then
+      begin
+        Distance := GetDistance(CurrVar, j);
+        if Distance > 0 then
+        begin
+          W := Mu / Distance;
+          Result := Result + W * X[j];
+        end;
+      end;
     end;
   end;
 
@@ -246,7 +275,9 @@ var
   i: Integer;
 begin
   for i := 0 to Length(X) - 1 do
-  begin        
+  begin
+    // Right parts of dif. eq-s: dXi/dt = -AXi + (B-Xi)(E + SUMj(Wij*Xj))
+    // i - current Neuron index, j - neib. neurons
     RP[i] := -A * X[i] + (B - X[i]) * (E(i) + SumNeibs(i))
   end;  
 end;
@@ -254,6 +285,16 @@ end;
 procedure TGrNetwork.SetNeurons(const Value: TNeuronCollection);
 begin
   FNeurons.Assign(Value);
+end;
+
+procedure TGrNetwork.SetVisibility(i, j, Value: Integer);
+begin
+  if (i >= 0) and (i <= Length(FVisibilityGraph) - 1) then
+    if (j >= 0) and (j <= Length(FVisibilityGraph[i]) - 1) then
+    begin  
+      FVisibilityGraph[i, j] := Value;
+      FVisibilityGraph[j, i] := Value;
+    end;
 end;
 
 end.

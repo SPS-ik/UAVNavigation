@@ -8,7 +8,8 @@ uses
   fDBMap in 'fDBMap.pas' {frmDBMaps},
   fLayers in 'fLayers.pas' {frmLayers},
   uGrossberg in 'uGrossberg.pas',
-  uRK in 'uRK.pas';
+  uRK in 'uRK.pas',
+  fObstacles in 'fObstacles.pas' {frmObstacles};
 
 {$R *.res}
 
@@ -18,5 +19,6 @@ begin
   Application.CreateForm(TfrmMain, frmMain);
   Application.CreateForm(TfrmDBMaps, frmDBMaps);
   Application.CreateForm(TfrmLayers, frmLayers);
+  Application.CreateForm(TfrmObstacles, frmObstacles);
   Application.Run;
 end.
